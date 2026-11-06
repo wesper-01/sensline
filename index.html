@@ -1,0 +1,2135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-dH2jJfdhWrzcU/I7u0vBSTjgrHNYG3MYXGKW1qluklM='; style-src 'sha256-KWK7HQ151wKi2EScDK/wIykB3HQEKYZVWywEzE5Tq8w='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>Sensline: RawAccel curves for Valorant</title>
+<meta name="description" content="Sensline builds a RawAccel curve for Valorant from how you really aim.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23101412'/%3E%3Cpath d='M6 22h6c5 0 7-12 14-12' fill='none' stroke='%237fdc5a' stroke-width='3.5' stroke-linecap='round'/%3E%3C/svg%3E">
+<script>
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('curve-bench-theme'); } catch (e) {}
+  var theme = saved === 'light' || saved === 'dark' ? saved : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  document.documentElement.dataset.theme = theme;
+  if (window.top !== window.self) document.documentElement.hidden = true; // refuse to run inside another site's frame
+})();
+</script>
+<style>
+  :root {
+    --bg: #f2f5f1; --card: #ffffff; --ink: #141a16; --soft: #56605a; --line: #dde2dc; --grid: #e9ece7;
+    --accent: #2f7d32; --accent-dark: #256427; --warn-bg: #fdf0e4; --warn: #8a3b05;
+    --btn: #24722a; --btn-hover: #1c5c21; --field: #ffffff; --field-line: #c6cdc6; --tip-bg: #141a16; --tip-ink: #ffffff;
+    --c-grid: #e9ece7; --c-text: #56605a; --c-bar: #d3dad3; --c-curve: #2f7d32; --c-flat: #858e87; --c-gain: #7a4bb0; --c-cross: #aab3ab; --c-fill: #ffffff; --c-label: #141a16;
+    color-scheme: light;
+    interpolate-size: allow-keywords;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+    --head: Bahnschrift, "DIN Alternate", "Segoe UI", system-ui, sans-serif;
+    --body: "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+  [data-theme=dark] {
+    --bg: #101412; --card: #181e1a; --ink: #edf2ee; --soft: #a8b3ab; --line: #2d3630; --grid: #262d28;
+    --accent: #7fdc5a; --accent-dark: #98e67a; --warn-bg: #3a2415; --warn: #ffcdab;
+    --btn: #27802e; --btn-hover: #226f28; --field: #101412; --field-line: #47524a; --tip-bg: #edf2ee; --tip-ink: #101412;
+    --c-grid: #262d28; --c-text: #a8b3ab; --c-bar: #434d45; --c-curve: #7fdc5a; --c-flat: #8b958d; --c-gain: #c4a0f0; --c-cross: #677169; --c-fill: #181e1a; --c-label: #edf2ee;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 0 22px 72px; }
+
+  .topbar { display: flex; justify-content: space-between; align-items: center; padding: 16px 0 0; }
+  .brand { display: inline-flex; align-items: center; gap: 9px; font: 600 18px var(--head); }
+  .mark { width: 26px; height: 26px; flex: none; }
+  .mark rect { fill: var(--ink); }
+  .mark path { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; }
+  [data-theme=dark] .mark rect { fill: #27302a; }
+  html:not([data-theme=dark]) .mark path { stroke: #7fdc5a; }
+  #themeToggle { padding: 7px 12px; font-size: 14px; }
+  .intro { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 48px; align-items: center; padding: 56px 0 52px; }
+  .intro h1 { font: 600 clamp(36px, 5vw, 56px)/1.06 var(--head); letter-spacing: -0.01em; margin: 0 0 18px; }
+  .hero-copy p { font-size: 18px; color: var(--soft); margin: 0 0 12px; max-width: 34em; }
+  .intro .cta { margin-top: 26px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; }
+  .intro .cta span { color: var(--soft); font-size: 14.5px; flex: 1 1 200px; }
+  .hero-copy > * { animation: rise .55s var(--ease) both; }
+  .hero-copy > :nth-child(2) { animation-delay: .06s; }
+  .hero-copy > :nth-child(3) { animation-delay: .12s; }
+  .hero-copy > :nth-child(4) { animation-delay: .18s; }
+  .hero-fig { margin: 0; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px; animation: rise .6s var(--ease) .12s both; }
+  #heroSvg { display: block; width: 100%; height: auto; touch-action: pan-y; cursor: crosshair; }
+  .h-grid { stroke: var(--c-grid); }
+  .h-flat { stroke: var(--c-flat); stroke-width: 1.5; stroke-dasharray: 5 5; }
+  .h-area { fill: var(--c-curve); opacity: .13; }
+  .h-curve { fill: none; stroke: var(--c-curve); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+  .h-guide { stroke: var(--c-cross); }
+  .h-dot { fill: var(--c-curve); stroke: var(--c-fill); stroke-width: 3; }
+  .h-text { fill: var(--c-text); font-size: 12.5px; }
+  .hero-read { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0 0; padding: 12px 0 0; border-top: 1px solid var(--line); }
+  .hero-read div { font-size: 13px; color: var(--soft); }
+  .hero-read b { display: block; font: 600 21px/1.2 var(--head); color: var(--ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .hero-fig figcaption { font-size: 13px; color: var(--soft); margin-top: 10px; }
+
+  .stepnav { position: sticky; top: 0; z-index: 5; margin: 0 -22px; padding: 0 22px; background: var(--bg); }
+  .stepnav ol { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
+  .stepnav a { display: flex; align-items: baseline; gap: 7px; padding: 13px 4px 12px; color: var(--soft); text-decoration: none; font: 600 15px var(--head); transition: color .2s; }
+  .stepnav a b { font-weight: 600; color: var(--soft); font-variant-numeric: tabular-nums; transition: color .2s; }
+  .stepnav a:hover, .stepnav a[aria-current] { color: var(--ink); }
+  .stepnav a[aria-current] b { color: var(--accent-dark); }
+  .navtrack { position: relative; height: 0; }
+  #navBar { position: absolute; left: 0; bottom: 0; width: 25%; height: 2px; background: var(--accent); opacity: 0; transform: translateX(calc(var(--i, 0) * 100%)); transition: transform .35s var(--ease), opacity .2s; }
+  #navBar.on { opacity: 1; }
+
+  section.step { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 30px 32px 32px; margin-top: 18px; scroll-margin-top: 64px; }
+  .rv { opacity: 0; transform: translateY(16px); transition: opacity .55s var(--ease), transform .55s var(--ease); }
+  .rv.in { opacity: 1; transform: none; }
+  #step1 .fields { max-width: 620px; }
+  ol.steps, .step .note { max-width: 46em; }
+  .step-label { font: 600 14px var(--head); color: var(--accent-dark); margin: 0 0 2px; }
+  h2 { font: 600 26px/1.2 var(--head); margin: 0 0 6px; }
+  h3 { font: 600 17px var(--head); margin: 24px 0 6px; }
+  .lead { color: var(--soft); margin: 0 0 18px; max-width: 38em; }
+  .note { font-size: 14px; color: var(--soft); margin: 10px 0 0; }
+
+  .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 16px; }
+  label.f { display: block; font-size: 14.5px; font-weight: 600; }
+  label.f small { display: block; min-height: 19px; font-size: 13.5px; font-weight: 400; color: var(--soft); margin-top: 3px; }
+  input[type=number], select {
+    width: 100%; margin-top: 5px; padding: 10px 12px; background: var(--field); color: var(--ink);
+    border: 1px solid var(--field-line); border-radius: 7px; font: 17px var(--body); font-variant-numeric: tabular-nums;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input[type=number]:hover, select:hover { border-color: var(--soft); }
+  input[type=number]:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); outline: none; }
+  select {
+    appearance: none; padding-right: 36px; cursor: pointer; text-overflow: ellipsis;
+    background-image: linear-gradient(45deg, transparent 50%, var(--soft) 50%), linear-gradient(135deg, var(--soft) 50%, transparent 50%);
+    background-position: right 18px center, right 13px center; background-size: 5px 5px; background-repeat: no-repeat;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .readout { margin: 16px 0 0; font-size: 16px; }
+  .readout b { font-variant-numeric: tabular-nums; }
+  .callout { background: var(--warn-bg); color: var(--warn); border-radius: 6px; padding: 11px 14px; margin-top: 12px; font-size: 14.5px; }
+
+  button {
+    font: 600 15px var(--body); color: var(--ink); background: var(--field); border: 1px solid var(--field-line);
+    border-radius: 7px; padding: 10px 15px; cursor: pointer; text-align: left;
+    transition: background-color .15s, border-color .15s, box-shadow .15s, transform .12s var(--ease);
+  }
+  button:active { transform: translateY(1px); }
+  button:hover { border-color: var(--ink); }
+  button.primary { background: var(--btn); color: #fff; border-color: var(--btn); padding: 13px 22px; font-size: 16px; }
+  button.primary:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+  .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14.5px; cursor: pointer; }
+
+  .drill { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .dia { display: block; width: 100%; max-width: 132px; height: auto; margin-bottom: 8px; overflow: visible; }
+  .dia .foe { fill: var(--c-curve); }
+  .dia .wall { fill: var(--c-bar); }
+  .dia .floor { stroke: var(--c-cross); }
+  .dia .cross { stroke: var(--ink); stroke-width: 1.5; fill: none; }
+  .dia .ring { stroke: var(--c-cross); fill: none; }
+  .dia .view { fill: var(--c-flat); opacity: .55; }
+  .dia [class*=a-] { animation-play-state: paused; }
+  .in .dia [class*=a-] { animation-play-state: running; }
+  .a-peek { animation: d-peek 1.1s var(--ease) .35s both; }
+  .a-strafe { animation: d-strafe .9s ease-in-out .35s 2 both; }
+  .a-flick { animation: d-flick .45s var(--ease) .7s both; }
+  .turnfx { transform-origin: 36px 20px; }
+  .a-turn { animation: d-turn .8s var(--ease) .6s both; }
+  @keyframes d-peek { from { transform: translateX(0); } to { transform: translateX(-24px); } }
+  @keyframes d-strafe { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-16px); } 75% { transform: translateX(16px); } }
+  @keyframes d-flick { from { transform: translateX(0); } to { transform: translateX(38px); } }
+  @keyframes d-turn { from { transform: rotate(0); } to { transform: rotate(180deg); } }
+  .drill li { padding-top: 0; font-size: 14px; color: var(--soft); line-height: 1.35; }
+  .drill b { display: block; color: var(--ink); font: 600 15.5px var(--head); }
+
+  .rec { background: var(--bg); border-radius: 8px; padding: 16px 18px; margin-bottom: 20px; }
+  .rec h3 { margin-top: 0; }
+  .rec p { margin: 0; }
+  ul.reasons { margin: 8px 0 0; padding-left: 20px; font-size: 14.5px; }
+  ul.reasons li { margin-bottom: 5px; }
+
+  .choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 16px; }
+  .choices button { display: block; width: 100%; }
+  .spark { display: block; width: 100%; height: 30px; margin-bottom: 8px; }
+  .spark path { fill: none; stroke: var(--c-flat); stroke-width: 2; vector-effect: non-scaling-stroke; transition: stroke .15s; }
+  button[aria-pressed=true] .spark path { stroke: var(--c-curve); }
+  .choices button small { display: block; color: var(--soft); font-size: 13px; font-weight: 400; line-height: 1.3; margin-top: 2px; }
+  button[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+  .strength { margin: 0 0 20px; }
+  .strength label { display: flex; justify-content: space-between; font-size: 14.5px; font-weight: 600; }
+  .strength output { font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; height: 26px; margin: 4px 0 0; padding: 0; appearance: none; background: transparent; cursor: pointer; }
+  input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 3px; background: linear-gradient(to right, var(--accent) var(--pct, 30%), var(--line) var(--pct, 30%)); }
+  input[type=range]::-moz-range-track { height: 6px; border-radius: 3px; background: var(--line); }
+  input[type=range]::-moz-range-progress { height: 6px; border-radius: 3px; background: var(--accent); }
+  input[type=range]::-webkit-slider-thumb { appearance: none; width: 20px; height: 20px; margin-top: -7px; border-radius: 50%; background: var(--c-fill); border: 3px solid var(--accent); transition: transform .15s var(--ease); }
+  input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--c-fill); border: 3px solid var(--accent); transition: transform .15s var(--ease); }
+  input[type=range]:hover::-webkit-slider-thumb, input[type=range]:active::-webkit-slider-thumb { transform: scale(1.15); }
+  input[type=range]:hover::-moz-range-thumb, input[type=range]:active::-moz-range-thumb { transform: scale(1.15); }
+
+  .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 18px; margin: 0 0 8px; font-size: 13.5px; color: var(--soft); }
+  .legend i { display: inline-block; width: 18px; margin-right: 6px; vertical-align: middle; border-top: 2.5px solid; }
+  .legend i.bar { height: 9px; border: 0; background: var(--c-bar); }
+  .legend i.curve { border-color: var(--c-curve); }
+  .legend i.flat { border-color: var(--c-flat); border-top-style: dashed; }
+  .legend i.gain { border-color: var(--c-gain); border-top-style: dotted; }
+  label.version { margin: 18px 0 0; max-width: 340px; }
+  th.group { font: 600 14.5px var(--head); color: var(--ink); padding-top: 16px; }
+  .mt0 { margin-top: 0; }
+  .mt10 { margin-top: 10px; }
+  .mt14 { margin-top: 14px; }
+  .mb4 { margin-bottom: 4px; }
+  .mb14 { margin-bottom: 14px; }
+  a { color: var(--accent-dark); }
+  #chart { position: relative; width: 100%; height: clamp(280px, 44vh, 400px); touch-action: none; }
+  #chart svg { display: block; width: 100%; height: 100%; }
+  .handle { cursor: grab; }
+  .handle:active { cursor: grabbing; }
+  #tip {
+    position: absolute; pointer-events: none; background: var(--tip-bg); color: var(--tip-ink); border-radius: 5px;
+    padding: 6px 10px; font-size: 13px; white-space: nowrap; display: none; font-variant-numeric: tabular-nums;
+  }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 12px 8px 0; text-align: left; border-bottom: 1px solid var(--grid); font-size: 14.5px; font-weight: 400; }
+  th { color: var(--soft); font-size: 13.5px; }
+  table.compact th, table.compact td { font-size: 13.5px; white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  .speed-table { margin-top: 14px; }
+
+  details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+  summary { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; transition: color .15s; }
+  summary::-webkit-details-marker { display: none; }
+  summary::before { content: ""; flex: none; width: 7px; height: 7px; margin-left: 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .22s var(--ease); }
+  details[open] > summary::before { transform: translate(0, -2px) rotate(45deg); }
+  summary:hover { color: var(--accent-dark); }
+  details::details-content { block-size: 0; overflow: clip; overflow-clip-margin: 6px; transition: block-size .28s var(--ease), content-visibility .28s allow-discrete; }
+  details[open]::details-content { block-size: auto; }
+  details[open] summary { margin-bottom: 12px; }
+
+  .bignum { font: 600 50px/1.1 var(--head); font-variant-numeric: tabular-nums; color: var(--accent-dark); }
+  ol.steps { margin: 18px 0 4px; padding-left: 22px; }
+  ol.steps li { margin-bottom: 7px; }
+  code { font-family: Consolas, monospace; font-size: 14px; background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+  pre { max-height: 260px; overflow: auto; background: var(--bg); padding: 10px; border-radius: 6px; font: 12.5px/1.4 Consolas, monospace; }
+  footer { margin-top: 26px; color: var(--soft); font-size: 13.5px; }
+  [hidden] { display: none !important; }
+  /* New results appear with a short rise, so the eye finds them. */
+  #recBody, #measured, #results, #handBody, #setupWarn { animation: rise .4s var(--ease) both; }
+  tr.chg td { animation: flash 1.2s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes flash { from { background-color: color-mix(in srgb, var(--accent) 24%, transparent); } to { background-color: transparent; } }
+  ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .28s; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after, ::details-content { animation-duration: .001s !important; animation-delay: 0s !important; animation-iteration-count: 1 !important; transition-duration: .001s !important; }
+  }
+
+  #test { position: fixed; inset: 0; z-index: 10; background: #161b21; color-scheme: dark; display: none; color: #fff; }
+  #test.on { display: block; animation: fade .2s ease-out both; }
+  #test.on #testStart > div { animation: rise .35s var(--ease) both; }
+  html:has(#test.on) { overflow: hidden; }
+  #test canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  #testStart { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; background: rgba(16, 20, 25, 0.62); }
+  #testStart > div { max-width: 520px; }
+  #testStart h2 { font-size: 34px; margin-bottom: 10px; }
+  #testStart p { color: #d5dae0; margin: 0 0 8px; }
+  #testStart .row { justify-content: center; margin-top: 20px; }
+  #testCancel { background: transparent; color: #fff; border-color: #7d8791; }
+  #testErr { color: #ffc4a8; }
+
+  @media (max-width: 680px) {
+    .drill { grid-template-columns: 1fr 1fr; }
+    .stepnav a { font-size: 14px; gap: 5px; }
+    .choices { grid-template-columns: 1fr; }
+    section.step { padding: 22px 18px 24px; }
+    .intro { padding-top: 34px; }
+    .hero-read b { font-size: 18px; }
+  }
+  @media (max-width: 860px) {
+    .intro { grid-template-columns: minmax(0, 1fr); gap: 30px; padding-bottom: 36px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <span class="brand"><svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7"/><path d="M6 22h6c5 0 7-12 14-12"/></svg>Sensline</span>
+    <button type="button" id="themeToggle"></button>
+  </div>
+
+  <header class="intro">
+    <div class="hero-copy">
+      <h1>Find the mouse curve that fits your hand.</h1>
+      <p>A mouse curve keeps your sens steady when you aim slowly and speeds it up on fast swings, so small adjustments stay precise and big turns take less arm.</p>
+      <p>Sensline watches how you really aim in a short Valorant-style test, then builds the settings file for RawAccel, a free mouse acceleration driver for Windows.</p>
+      <div class="cta">
+        <button class="primary" id="startGuide">Get started</button>
+        <span>Takes about 5 minutes. Runs in your browser and saves only on this device.</span>
+      </div>
+    </div>
+    <figure class="hero-fig">
+      <svg id="heroSvg" viewBox="0 0 460 236" role="img" aria-label="Your current curve: sens stays at today's value at slow hand speeds and rises on fast swings."></svg>
+      <div class="hero-read" aria-live="off">
+        <div>Hand speed<b id="heroSpeed"></b></div>
+        <div>Sens<b id="heroSens"></b></div>
+        <div>Full 360°<b id="heroCm"></b></div>
+      </div>
+      <figcaption>Your current curve. Move across the graph to try a hand speed.</figcaption>
+    </figure>
+  </header>
+
+  <nav class="stepnav" aria-label="Steps">
+    <ol>
+      <li><a href="#step1"><b>1</b>Mouse</a></li>
+      <li><a href="#step2"><b>2</b>Aim test</a></li>
+      <li><a href="#step3"><b>3</b>Curve</a></li>
+      <li><a href="#step4"><b>4</b>Install</a></li>
+    </ol>
+    <div class="navtrack" aria-hidden="true"><span id="navBar"></span></div>
+  </nav>
+
+  <main>
+    <section class="step" id="step1">
+      <p class="step-label">Step 1</p>
+      <h2>Your mouse</h2>
+      <p class="lead">Use what you play with today. You'll find your sens in Valorant under Settings, General, and your DPI in your mouse's software.</p>
+      <div class="fields">
+        <label class="f">Mouse DPI <input type="number" id="dpi" min="100" max="30000" step="50"></label>
+        <label class="f">Valorant sens <input type="number" id="sens" min="0.01" max="20" step="0.01"></label>
+      </div>
+      <p class="readout" id="setupRead"></p>
+      <p class="callout" id="setupWarn" hidden></p>
+    </section>
+
+    <section class="step" id="step2">
+      <p class="step-label">Step 2</p>
+      <h2>Play the aim test</h2>
+      <p class="lead">Play the way you do in a match. There are 24 enemies, and your normal sens is used so we can see how your hand really moves.</p>
+      <ul class="drill">
+        <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(50 28)" class="foe"><g class="a-peek"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><rect class="wall" x="42" y="8" width="16" height="26.5" rx="1"/><g transform="translate(26 17)" class="cross"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></svg><b>Peeks</b>Enemies step out from cover</li>
+        <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(36 28)" class="foe"><g class="a-strafe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><g transform="translate(36 17)" class="cross"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></svg><b>Strafes</b>Enemies run side to side</li>
+        <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(58 28)" class="foe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g><g transform="translate(20 15)"><g class="cross a-flick"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></g></svg><b>Flicks</b>Enemies stand off to one side</li>
+        <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><circle class="ring" cx="36" cy="20" r="16"/><circle class="foe" cx="36" cy="33" r="3.4"/><g class="a-turn turnfx"><path class="view" d="M36 20 L28 6 L44 6 Z"/></g><circle cx="36" cy="20" r="2.4" class="cross"/></svg><b>Turns</b>Enemies appear behind you</li>
+      </ul>
+      <p class="callout">If RawAccel is already running with a curve, turn it off first. Otherwise the test applies acceleration twice.</p>
+      <div class="row"><button class="primary" id="runFlat">Start the aim test</button></div>
+      <label class="check"><input type="checkbox" id="sound"> Play a sound when I hit an enemy</label>
+      <div id="measured" hidden><p class="readout" id="measureRead"></p></div>
+    </section>
+
+    <section class="step" id="step3">
+      <p class="step-label">Step 3</p>
+      <h2>Your curve</h2>
+      <p class="lead">The line shows your sens at each hand speed. Slow on the left, fast on the right.</p>
+
+      <div class="rec">
+        <p id="recEmpty">Finish the aim test and your recommended curve appears here. You can also pick a starting point below.</p>
+        <div id="recBody" hidden>
+          <h3>Recommended for you</h3>
+          <p id="recHead"></p>
+          <div class="row"><button class="primary" id="recApply">Use this curve</button></div>
+          <details>
+            <summary>Why this curve?</summary>
+            <ul class="reasons" id="recReasons"></ul>
+            <p class="note" id="recCompare"></p>
+            <p class="note">These are rules of thumb from your numbers, not proven best settings. Playing the test a few times makes them steadier.</p>
+          </details>
+        </div>
+      </div>
+
+      <div class="choices" id="presets"></div>
+
+      <div class="strength" id="accelSliderWrap">
+        <label for="accelSlider">Acceleration <output id="accelOut"></output></label>
+        <input type="range" id="accelSlider" min="0" max="100" step="0.5">
+        <p class="note mt0">The main setting to tune: how quickly the boost builds as your hand speeds up.</p>
+      </div>
+      <div class="strength">
+        <label for="strength"><span id="strengthLabel">Speed boost on fast swings</span> <output id="strengthOut"></output></label>
+        <input type="range" id="strength" min="5" max="80" step="1">
+      </div>
+
+      <div class="legend">
+        <span><i class="curve"></i>Your curve</span>
+        <span><i class="flat"></i>Your sens today</span>
+        <span id="lgGain" hidden><i class="gain"></i>Gain</span>
+        <span id="lgHist" hidden><i class="bar"></i>Where your hand spent its time</span>
+      </div>
+      <div id="chart" role="img" aria-label="Graph of Valorant sensitivity against hand speed. The table below has the same values.">
+        <svg id="svg"></svg>
+        <div id="tip"></div>
+      </div>
+      <div class="scroll">
+        <table class="speed-table" aria-label="Sensitivity at sample hand speeds">
+          <thead><tr><th>Hand speed</th><th>Sens</th><th>Full 360° takes</th><th>Compared to today</th></tr></thead>
+          <tbody id="speedRows"></tbody>
+        </table>
+      </div>
+
+      <div class="row"><button id="runCurve">Try this curve in the test</button></div>
+      <div id="results" hidden>
+        <div class="scroll"><table class="mt14"><thead><tr><th>Test</th><th>Typical time per kill</th><th>Shots that hit</th><th>Hits that were headshots</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+        <p class="note">A new curve takes days to learn, so one run means little. Trust several runs and how it feels in game.</p>
+      </div>
+
+      <details>
+        <summary>Advanced settings</summary>
+        <label class="f mb14">Curve type
+          <select id="mode">
+            <option value="linear">Linear: straight ramp, then levels off</option>
+            <option value="classic">Classic: bent ramp, then levels off</option>
+            <option value="natural">Natural: eases in and settles at the top</option>
+            <option value="synchronous">Synchronous: S-curve, slower when slow, faster when fast</option>
+          </select>
+        </label>
+        <div class="fields">
+          <label class="f">Sens when slow <input type="number" id="slow" min="0.01" step="0.01"><small id="slowCm"></small></label>
+          <label class="f" id="accelWrap">Acceleration <input type="number" id="accel" min="0.0001" step="0.001"><small id="accelNote"></small></label>
+          <label class="f" id="capWrap">Cap: Output <input type="number" id="capOut" min="1.01" step="0.05"><small id="capNote"></small></label>
+          <label class="f" id="fastWrap">Top sens <input type="number" id="fast" min="0.01" step="0.01"><small id="fastCm"></small></label>
+          <label class="f" id="offsetWrap">Input Offset <input type="number" id="offset" min="0" step="0.5"><small id="offsetNote"></small></label>
+          <label class="f" id="startWrap">Boost starts (in/s) <input type="number" id="start" min="0" step="0.5"><small id="startCm"></small></label>
+          <label class="f" id="endWrap">Boost ends (in/s) <input type="number" id="end" min="1" step="0.5"><small id="endCm"></small></label>
+          <label class="f" id="expWrap">Ramp bend (exponent) <input type="number" id="exp" min="1.1" max="4" step="0.1"><small>2 makes it the same as Linear</small></label>
+        </div>
+        <label class="check"><input type="checkbox" id="showGain"> Show gain on the graph</label>
+        <p class="note">You can also drag the two points on the graph.</p>
+      </details>
+
+      <details>
+        <summary>Fix left and right differences (optional)</summary>
+        <p class="note mt0">Some players flick better one way because of their grip. This 36-enemy check measures where each flick lands before you correct it, then fixes only real differences. Right flicks and slow aim stay as they are.</p>
+        <div class="row"><button id="runHand">Run hand check</button></div>
+        <p class="note" id="handNow"></p>
+        <p class="note" id="handEmpty" hidden></p>
+        <div id="handBody" hidden>
+          <div class="scroll"><table class="compact mt10">
+            <thead><tr><th>Direction</th><th>Flicks</th><th title="100% means the first flick landed right on the enemy">First flick landed at</th></tr></thead>
+            <tbody id="handRows"></tbody>
+          </table></div>
+          <ul class="reasons" id="handReasons"></ul>
+          <div class="row"><button id="handApply">Apply these fixes</button></div>
+        </div>
+        <div class="row"><button id="handReset" hidden>Reset hand fixes</button></div>
+        <p class="note">RawAccel can scale left or up movement and rotate your input, but each direction can't have its own curve shape. A left fix applies at every speed, so check your slow left aim after using one.</p>
+      </details>
+    </section>
+
+    <section class="step" id="step4">
+      <p class="step-label">Step 4</p>
+      <h2>Install your curve</h2>
+      <p class="lead mb4">In Valorant, set your sens to</p>
+      <div class="bignum" id="outSens"></div>
+      <label class="f version">Your RawAccel version (in the app: Help, then About)
+        <select id="raVersion">
+          <option value="1.7">1.7 or newer</option>
+          <option value="1.6">1.6</option>
+        </select>
+      </label>
+      <p class="note">Versions older than 1.6 aren't supported, so update to the latest first.</p>
+      <ol class="steps">
+        <li>Get <a href="https://github.com/a1xd/rawaccel/releases" target="_blank" rel="noopener noreferrer">RawAccel from its official GitHub page</a> if you don't have it.</li>
+        <li>Close RawAccel, then back up the <code>settings.json</code> in its folder. Your new file replaces it, including any device settings and profiles.</li>
+        <li>Download your file and put it in that folder.</li>
+        <li>Open <code>rawaccel.exe</code>, check it matches the list below, then click <b>Apply</b>. Your curve isn't active until you do.</li>
+        <li>To load it automatically each time you open the app, turn on <b>Advanced, Apply Settings.json On GUI Startup</b>.</li>
+        <li>Keep your mouse at the DPI you entered in step 1. Acceleration and Input Offset are worked out for that DPI.</li>
+      </ol>
+      <p class="callout">If the app still shows <b>Off</b> after you open it, the file didn't fit your version and RawAccel replaced it without a warning. Check the version above and try again, or type the values in using the list below.</p>
+      <div class="row">
+        <button class="primary" id="download">Download settings.json</button>
+        <button id="copy">Copy JSON</button>
+      </div>
+      <p class="note">RawAccel's FAQ says it's signed and works in Valorant, but also that anti-cheat decisions can't be guaranteed. I couldn't find a statement from Riot, so that risk is yours.</p>
+      <details open>
+        <summary>Match these values in RawAccel</summary>
+        <p class="note mt0">These use the same names as the app, so you can check it line by line or type them in, then click Apply.</p>
+        <table class="mt10"><tbody id="valueRows"></tbody></table>
+        <p class="note">Leave Sens Multiplier at 1. It scales every speed, including your slow aim, so Acceleration and Cap do the tuning here.</p>
+        <p class="callout">Keep DPI at 0 in Device Menu. If you entered your mouse DPI there earlier, set it back to 0, otherwise everything feels slower.</p>
+        <p class="callout" id="fileOnly" hidden></p>
+      </details>
+      <details>
+        <summary>See the JSON</summary>
+        <pre id="json"></pre>
+      </details>
+    </section>
+
+    <section class="step" id="data">
+      <h2>Your test history</h2>
+      <p class="note" id="historyNote">No saved tests yet. Finish a test and it shows up here.</p>
+      <div id="history" hidden>
+        <div class="scroll"><table class="compact mt10">
+          <thead><tr>
+            <th>When</th><th>Test</th><th>Time</th><th>Hit</th><th title="Share of your hits that were headshots">Heads</th>
+            <th title="Average distance from the head when you clicked">Error</th>
+            <th title="Average error along your flick: + went past the enemy, - stopped short">Over</th>
+          </tr></thead>
+          <tbody id="historyRows"></tbody>
+        </table></div>
+        <p class="note">Error is how far from the head you clicked. Over is + when you flick past the enemy and - when you stop short.</p>
+        <div class="row">
+          <button id="dlCsv">Download shots (CSV)</button>
+          <button id="dlJson">Download all data (JSON)</button>
+          <button id="clearRuns">Delete saved tests</button>
+        </div>
+      </div>
+      <details>
+        <summary>Privacy and safety</summary>
+        <ul class="reasons">
+          <li>No accounts, ads or tracking.</li>
+          <li>A security policy blocks this page from connecting to any server and from running outside code, so your test data can't be sent anywhere by the page.</li>
+          <li>Your settings and tests stay in this browser. You can download or delete them above.</li>
+          <li>Only install RawAccel from the official link in step 4. It's a driver with deep access to your PC, so copies from other sites aren't worth the risk.</li>
+        </ul>
+      </details>
+    </section>
+  </main>
+
+  <footer>© 2026 wesper-01. All rights reserved. Curve math and settings follow the RawAccel 1.6.1 and 1.7.1 source. Not affiliated with RawAccel or Riot Games.</footer>
+</div>
+
+<div id="test" aria-modal="true" role="dialog" aria-label="Aim test">
+  <canvas id="testCanvas"></canvas>
+  <div id="testStart"><div>
+    <h2 id="testTitle"></h2>
+    <p id="testBody"></p>
+    <div class="row">
+      <button class="primary" id="testGo">Start</button>
+      <button id="testCancel">Cancel</button>
+    </div>
+    <p class="note" id="testErr"></p>
+  </div></div>
+</div>
+
+<script>
+'use strict';
+/* ---------- RawAccel math. Curves are worked out in in/s, then panelArgs converts them for the app. ---------- */
+const VAL_YAW = 0.07; // degrees per count at Valorant sens 1
+const cm360 = (sens, dpi) => 360 / (VAL_YAW * sens * dpi) * 2.54;
+
+function classicGain(o, capX, ratio, e) {
+  const y = ratio - 1;
+  const a = Math.pow(y / e, 1 / (e - 1)) / (capX - o);
+  const raised = Math.pow(a, e - 1);
+  const fn = x => raised * Math.pow(x - o, e) / x;
+  const k = (fn(capX) - y) * capX;
+  return { a, s: x => x <= o ? 1 : 1 + (x < capX ? fn(x) : k / x + y) };
+}
+function naturalGain(o, limit, decayRate) {
+  const L = limit - 1, a = decayRate / Math.abs(L), k = -L / a;
+  return x => {
+    if (x <= o) return 1;
+    const d = o - x;
+    return (L * (Math.exp(a * d) / a - d) + k) / x + 1;
+  };
+}
+function synchronousGain(sync, motivity, gamma) {
+  // smooth 0.5 (sharpness 1), integrated into RawAccel's velocity table: 2^-3..2^9, 8 steps per octave.
+  const lm = Math.log(motivity), gc = gamma / lm, ls = Math.log(sync);
+  const sig = x => Math.exp(Math.tanh(gc * (Math.log(x) - ls)) * lm);
+  const START = -3, STOP = 9, NUM = 8, size = (STOP - START) * NUM + 1;
+  const data = [];
+  let sum = 0, prev = 0;
+  for (let i = 0; i < size; i++) {
+    const e = START + Math.floor(i / NUM);
+    const x = Math.pow(2, e) * (1 + (i % NUM) / NUM);
+    const step = (x - prev) / 2;
+    for (let p = 1; p <= 2; p++) sum += sig(prev + p * step) * step;
+    prev = x;
+    data.push(sum);
+  }
+  const xStart = Math.pow(2, START);
+  return x => {
+    if (x <= 0) return data[0] / xStart;
+    const e = Math.min(Math.floor(Math.log2(x)), STOP - 1);
+    if (e < START) return data[0] / xStart;
+    const f = NUM * (e - START + x / Math.pow(2, e) - 1);
+    const i = Math.min(Math.floor(f), size - 2);
+    return (data[i] + (data[i + 1] - data[i]) * (f - i)) / x;
+  };
+}
+
+// Turns "slow sens, top sens, ramp start, ramp end" into real RawAccel parameters.
+function buildCurve(c) {
+  const ratio = c.fast / c.slow;
+  if (c.mode === 'linear' || (c.mode === 'classic' && c.exp === 2)) {
+    const { a, s } = classicGain(c.start, c.end, ratio, 2);
+    return { base: c.slow, s, args: { mode: 'classic', inputOffset: c.start, acceleration: a, exponentClassic: 2, capMode: 'output', cap: { x: c.end, y: ratio } } };
+  }
+  if (c.mode === 'classic') {
+    const { a, s } = classicGain(c.start, c.end, ratio, c.exp);
+    return { base: c.slow, s, args: { mode: 'classic', inputOffset: c.start, acceleration: a, exponentClassic: c.exp, capMode: 'in_out', cap: { x: c.end, y: ratio } } };
+  }
+  if (c.mode === 'synchronous') {
+    const motivity = Math.sqrt(ratio), sync = Math.sqrt(c.start * c.end);
+    // tanh(2) = 96% of the way to the plateau at both ramp edges
+    const gamma = 2 * Math.log(motivity) / Math.log(c.end / sync);
+    return { base: Math.sqrt(c.slow * c.fast), s: synchronousGain(sync, motivity, gamma), args: { mode: 'synchronous', syncSpeed: sync, motivity, gamma, smooth: 0.5 } };
+  }
+  // exp(-3) = 95% of the way to the limit at the ramp end
+  const decayRate = 3 * (ratio - 1) / (c.end - c.start);
+  return { base: c.slow, s: naturalGain(c.start, ratio, decayRate), args: { mode: 'natural', inputOffset: c.start, limit: ratio, decayRate } };
+}
+
+// The export keeps Sens Multiplier at 1 and leaves the device DPI unset, which is neutral in the driver.
+// RawAccel then measures speed in counts/ms, so speeds scale up by dpi/1000 and slopes scale down by the same amount.
+function panelArgs(c, dpi) {
+  const a = { ...buildCurve(c).args }, k = dpi / 1000;
+  if ('inputOffset' in a) a.inputOffset *= k;
+  if ('acceleration' in a) a.acceleration /= k;
+  if ('decayRate' in a) a.decayRate /= k;
+  if ('syncSpeed' in a) a.syncSpeed *= k;
+  if (a.cap) a.cap = { x: a.cap.x * k, y: a.cap.y };
+  return a;
+}
+const r6 = v => Math.round(v * 1e6) / 1e6;
+const r9 = v => Math.round(v * 1e9) / 1e9; // RawAccel's fields keep 9 decimals, and small accelerations need them
+// RawAccel 1.6 and 1.7 use different settings files. A file that doesn't fit is silently replaced by the app.
+function settingsJSON(c, dpi) {
+  const is16 = c.raVersion === '1.6';
+  let a = panelArgs(c, dpi);
+  if (is16 && a.mode === 'synchronous') {
+    // 1.6 calls this Motivity. Its logistic curve equals the 1.7 tanh curve when growth = ln(2 * gamma / ln(motivity)).
+    a = { mode: 'motivity', motivity: a.motivity, midpoint: a.syncSpeed, growthRate: Math.log(2 * a.gamma / Math.log(a.motivity)) };
+  }
+  const shape = is16 ? { growthRate: 1, midpoint: 5 } : { gamma: 1, syncSpeed: 5 };
+  const accel = (over) => ({
+    mode: 'noaccel', 'Gain / Velocity': true, inputOffset: 0, outputOffset: 0, acceleration: 0.005, decayRate: 0.1,
+    ...shape, motivity: 1.5, exponentClassic: 2, scale: 1, exponentPower: 0.05, limit: 1.5, smooth: 0.5,
+    'Cap / Jump': { x: 15, y: 1.5 }, 'Cap mode': 'output', data: [], ...over,
+  });
+  const over = {};
+  for (const [k, v] of Object.entries(a)) {
+    if (k === 'cap') over['Cap / Jump'] = { x: r6(v.x), y: r6(v.y) };
+    else if (k === 'capMode') over['Cap mode'] = v;
+    else if (k === 'acceleration') over[k] = r9(v);
+    else over[k] = typeof v === 'number' ? r6(v) : v;
+  }
+  const domainRange = {
+    'Stretches domain for horizontal vs vertical inputs': { x: 1, y: 1 },
+    'Stretches accel range for horizontal vs vertical inputs': { x: 1, y: 1 },
+  };
+  const args = { 'Whole or horizontal accel parameters': accel(over), 'Vertical accel parameters': accel({}) };
+  const tail = { 'Degrees of rotation': r6(c.rot ?? 0), 'Degrees of angle snapping': 0, 'Input Speed Cap': 0 };
+  const whole = "Whole/combined accel (set false for 'by component' mode)";
+  const modes = `classic | jump | natural | ${is16 ? 'motivity' : 'synchronous'} | power | lut | noaccel`;
+  const head = { '### Accel modes ###': modes, '### Cap modes ###': 'in_out | input | output' };
+  if (is16) {
+    return JSON.stringify({
+      ...head,
+      version: '1.6.1',
+      defaultDeviceConfig: {
+        disable: false,
+        'DPI (normalizes sens to 1000dpi and converts input speed unit: counts/ms -> in/s)': 0,
+        'Polling rate Hz (keep at 0 for automatic adjustment)': 0,
+      },
+      profiles: [{
+        name: 'Valorant', [whole]: true, lpNorm: 2, ...domainRange, ...args,
+        'Sensitivity multiplier': 1,
+        'Y/X sensitivity ratio (vertical sens multiplier)': 1,
+        'L/R sensitivity ratio (left sens multiplier)': r6(c.lr ?? 1),
+        'U/D sensitivity ratio (up sens multiplier)': r6(c.ud ?? 1),
+        ...tail,
+      }],
+      devices: [],
+    }, null, 2);
+  }
+  return JSON.stringify({
+    ...head,
+    version: '1.7.0',
+    defaultDeviceConfig: {
+      disable: false,
+      'Use constant time interval based on polling rate': false,
+      'DPI (normalizes input speed unit: counts/ms -> in/s)': 0,
+      'Polling rate Hz (keep at 0 for automatic adjustment)': 0,
+    },
+    profiles: [{
+      name: 'Valorant', ...domainRange, ...args,
+      'Input speed calculation parameters': {
+        [whole]: true,
+        lpNorm: 2,
+        'Time in ms after which an input is weighted at half its original value.': 0,
+        'Time in ms after which scale is weighted at half its original value.': 0,
+        'Time in ms after which an output is weighted at half its original value.': 0,
+      },
+      'Output DPI': 1000,
+      'Y/X output DPI ratio (vertical sens multiplier)': 1,
+      'L/R output DPI ratio (left sens multiplier)': r6(c.lr ?? 1),
+      'U/D output DPI ratio (up sens multiplier)': r6(c.ud ?? 1),
+      ...tail,
+    }],
+    devices: [],
+  }, null, 2);
+}
+
+// The app's own labels, in the order they appear on screen.
+function appValues(c, dpi) {
+  const a = panelArgs(c, dpi), is16 = c.raVersion === '1.6', n = v => fmt(v, 6), rows = [];
+  const group = t => rows.push({ group: t });
+  const row = (k, v) => rows.push({ k, v });
+  group('Top of the panel');
+  row('Sens Multiplier', '1');
+  row('Lock X & Y', 'On');
+  row('Y/X Ratio', 'Empty while locked, Current shows 1');
+  row('Rotation', n(c.rot ?? 0));
+  group('Curve');
+  const isLinear = a.mode === 'classic' && a.exponentClassic === 2;
+  const name = isLinear ? 'Linear' : { natural: 'Natural', classic: 'Classic', synchronous: is16 ? 'Motivity' : 'Synchronous' }[a.mode];
+  row('Dropdown under Rotation', name);
+  row('Gain', 'On');
+  if (a.mode === 'natural') {
+    row('Decay Rate', n(a.decayRate));
+    row('Input Offset', n(a.inputOffset));
+    row('Limit', n(a.limit));
+  } else if (isLinear) {
+    row('Acceleration', n(a.acceleration));
+    row('Cap Type', 'Output');
+    row('Cap: Output', n(a.cap.y));
+    row('Input Offset', n(a.inputOffset));
+  } else if (a.mode === 'classic') {
+    row('Cap Type', 'Both');
+    row('Input', n(a.cap.x));
+    row('Output', n(a.cap.y));
+    row('Input Offset', n(a.inputOffset));
+    row('Power', n(a.exponentClassic));
+  } else if (is16) {
+    row('Growth Rate', n(Math.log(2 * a.gamma / Math.log(a.motivity))));
+    row('Motivity', n(a.motivity));
+    row('Midpoint', n(a.syncSpeed));
+  } else {
+    row('Gamma', n(a.gamma));
+    row('Smooth', n(a.smooth));
+    row('Motivity', n(a.motivity));
+    row('SyncSpeed', n(a.syncSpeed));
+  }
+  group('Anisotropy');
+  row('Domain X and Y', '1 and 1');
+  row('Range X and Y', '1 and 1');
+  row('Lp Norm', '2');
+  row('Whole', 'On');
+  group('Advanced menu, Device Menu');
+  row('DPI', '0');
+  row('Polling rate', '0');
+  return rows;
+}
+
+/* ---------- State ---------- */
+const PRESETS = [
+  { id: 'subtle', name: 'Subtle', note: '+15%, barely noticeable', mode: 'linear', lo: 1, hi: 1.15, start: 10, end: 45 },
+  { id: 'balanced', name: 'Balanced', note: '+30%, a good first try', mode: 'linear', lo: 1, hi: 1.3, start: 8, end: 40 },
+  { id: 'turns', name: 'Strong', note: '+60%, for low sens players', mode: 'linear', lo: 1, hi: 1.6, start: 12, end: 40 },
+];
+// Storage keys keep the old name on purpose: renaming them would lose players' saved settings and tests.
+const STORE = 'curve-bench-v1';
+const defaults = { curveV: 2, dpi: 800, sens: 0.35, mode: 'linear', slow: 0.35, fast: 0.455, start: 8, end: 40, exp: 2, preset: 'balanced', showGain: false, sound: true, raVersion: '1.7', lr: 1, ud: 1, rot: 0, hist: null, peaks: null, results: {} };
+let st = { ...defaults };
+// Anything read back from storage is treated as untrusted: only known fields of the right type survive.
+const isNum = v => typeof v === 'number' && Number.isFinite(v);
+function cleanState(raw) {
+  const out = { ...defaults, results: {} };
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
+  for (const k of ['dpi', 'sens', 'slow', 'fast', 'start', 'end', 'exp', 'lr', 'ud', 'rot']) if (isNum(raw[k])) out[k] = raw[k];
+  for (const k of ['showGain', 'sound']) if (typeof raw[k] === 'boolean') out[k] = raw[k];
+  if (['linear', 'natural', 'classic', 'synchronous'].includes(raw.mode)) out.mode = raw.mode;
+  if (raw.raVersion === '1.6' || raw.raVersion === '1.7') out.raVersion = raw.raVersion;
+  out.preset = PRESETS.some(p => p.id === raw.preset) ? raw.preset : null;
+  // Curves saved before Linear became the default move to Balanced on the player's real sens. Fixes and results stay.
+  if (raw.curveV !== 2) Object.assign(out, { mode: 'linear', slow: out.sens, fast: out.sens * 1.3, start: 8, end: 40, preset: 'balanced' });
+  if (Array.isArray(raw.hist) && raw.hist.length <= 500 && raw.hist.every(v => isNum(v) && v >= 0)) out.hist = raw.hist;
+  if (Array.isArray(raw.peaks) && raw.peaks.length <= 500 && raw.peaks.every(isNum)) out.peaks = raw.peaks;
+  if (raw.results && typeof raw.results === 'object') {
+    for (const k of ['flat', 'curve', 'hand']) {
+      const r = raw.results[k];
+      if (r && isNum(r.median) && isNum(r.accuracy)) out.results[k] = { median: r.median, accuracy: r.accuracy, headshot: isNum(r.headshot) ? r.headshot : null };
+    }
+  }
+  return out;
+}
+function validRun(r) {
+  return !!r && isNum(r.id) && ['flat', 'curve', 'hand'].includes(r.kind) && isNum(r.dpi) && isNum(r.sens) && typeof r.date === 'string'
+    && !!r.summary && isNum(r.summary.medianMs) && isNum(r.summary.accuracy) && isNum(r.summary.avgErrorDeg) && isNum(r.summary.avgOvershootDeg)
+    && (r.summary.headshotRate == null || isNum(r.summary.headshotRate)) && Array.isArray(r.shots);
+}
+const validMove = m => !!m && isNum(m.runId) && Array.isArray(m.samples) && m.samples.every(row => Array.isArray(row) && row.every(isNum));
+const esc = v => String(v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+try { st = cleanState(JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (e) { /* unreadable or private mode: start fresh */ }
+const save = () => { try { localStorage.setItem(STORE, JSON.stringify(st)); } catch (e) { /* not saved, still usable */ } };
+
+const $ = id => document.getElementById(id);
+const fmt = (v, d = 3) => { const s = (+v).toFixed(d); return s.includes('.') ? s.replace(/\.?0+$/, '') : s; };
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+function normalize() {
+  st.dpi = clamp(Math.round(st.dpi), 100, 30000);
+  st.sens = clamp(st.sens, 0.001, 20);
+  st.lr = clamp(st.lr, 0.5, 2);
+  st.ud = clamp(st.ud, 0.5, 2);
+  st.rot = clamp(st.rot, -45, 45);
+  st.slow = Math.min(st.slow, 50);
+  st.fast = Math.min(st.fast, 100);
+  st.end = Math.min(st.end, 500);
+  const minStart = st.mode === 'synchronous' ? 0.5 : 0;
+  st.start = clamp(st.start, minStart, 300);
+  st.end = Math.max(st.end, st.start + 2);
+  st.exp = clamp(st.exp, 1.1, 4);
+  st.slow = Math.max(st.slow, 0.01);
+  st.fast = Math.max(st.fast, st.slow * 1.01);
+}
+
+/* ---------- Motion. Every animation here shows a change or a result; none of them loop. ---------- */
+const calmQuery = matchMedia('(prefers-reduced-motion: reduce)');
+const calm = () => calmQuery.matches;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+const easeInOut = t => t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+// Runs step(0..1) per frame. The timer finishes it even when a hidden page gets no frames.
+function tween(ms, step, done) {
+  if (calm()) { step(1); if (done) done(); return () => {}; }
+  let live = true;
+  const finish = () => { if (!live) return; live = false; step(1); if (done) done(); };
+  const t0 = performance.now();
+  const loop = now => {
+    if (!live) return;
+    const t = (now - t0) / ms;
+    if (t >= 1) return finish();
+    step(Math.max(0, t));
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  setTimeout(finish, ms + 150);
+  return () => { live = false; };
+}
+
+/* ---------- Chart ---------- */
+const svg = $('svg'), chartEl = $('chart'), tip = $('tip');
+const M = { l: 54, r: 18, t: 14, b: 44 };
+let view = null;      // current scales
+let frozen = null;    // axes hold still during a drag
+let hoverX = null;
+
+const niceStep = (span, n) => {
+  const raw = span / n, p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p;
+};
+function domains() {
+  const c = buildCurve(st);
+  let peak = st.fast, low = Math.min(st.slow, st.sens);
+  peak = Math.max(peak, st.sens);
+  low = Math.min(low, c.base * c.s(0.5));
+  let xMax = Math.max(60, st.end * 1.5);
+  if (st.hist) xMax = Math.max(xMax, histPct(0.995) * 1.15);
+  xMax = Math.ceil(xMax / 10) * 10;
+  const pad = (peak - low) * 0.22 + peak * 0.03;
+  return { xMax, yMin: Math.max(0, low - pad), yMax: peak + pad };
+}
+function histPct(p) {
+  const h = st.hist; if (!h) return 0;
+  const total = h.reduce((a, b) => a + b, 0); if (!total) return 0;
+  let run = 0;
+  for (let i = 0; i < h.length; i++) { run += h[i]; if (run / total >= p) return i * HBIN + HBIN / 2; }
+  return h.length * HBIN;
+}
+const HBIN = 2, HBINS = 150;
+const median = a => { if (!a || !a.length) return 0; const s = [...a].sort((p, q) => p - q); return s[Math.floor(s.length / 2)]; };
+
+function chartColors() {
+  const css = getComputedStyle(document.documentElement), out = {};
+  for (const k of ['grid', 'text', 'bar', 'curve', 'flat', 'gain', 'cross', 'fill', 'label']) out[k] = css.getPropertyValue('--c-' + k).trim();
+  return out;
+}
+let chartDraw = 1;   // 0..1 share of the curve revealed the first time it comes into view
+let morph = null;    // { from, t } while the curve glides to a newly picked one
+let stopMorph = null;
+const mix = (a, b, t) => a + (b - a) * t;
+function curveSnapshot() {
+  const c = buildCurve(st), fn = x => c.base * c.s(x);
+  return { fn, start: st.start, end: st.end, fast: st.fast, lowY: st.mode === 'synchronous' ? st.slow : fn(0.5), d: domains() };
+}
+// Picked curves glide to their new shape. Dragging and typing stay instant, because lag there feels broken.
+function changeCurve(change) {
+  const from = curveSnapshot();
+  change();
+  if (stopMorph) stopMorph();
+  morph = calm() ? null : { from, t: 0 };
+  render();
+  if (!morph) return;
+  stopMorph = tween(420, t => { if (morph) { morph.t = easeOut(t); drawChart(); } }, () => { morph = null; stopMorph = null; drawChart(); });
+}
+function drawChart() {
+  const C = chartColors();
+  const W = chartEl.clientWidth, H = chartEl.clientHeight;
+  if (!W || !H) return;
+  const target = curveSnapshot();
+  const m = morph;
+  const d = frozen || (m ? { xMax: mix(m.from.d.xMax, target.d.xMax, m.t), yMin: mix(m.from.d.yMin, target.d.yMin, m.t), yMax: mix(m.from.d.yMax, target.d.yMax, m.t) } : target.d);
+  const px = W - M.l - M.r, py = H - M.t - M.b;
+  const X = v => M.l + v / d.xMax * px;
+  const Y = v => M.t + (1 - (v - d.yMin) / (d.yMax - d.yMin)) * py;
+  view = { d, X, Y, px, py, W, H };
+  const c = buildCurve(st);
+  const eff = m ? x => mix(m.from.fn(x), target.fn(x), m.t) : target.fn;
+  const hStart = m ? mix(m.from.start, st.start, m.t) : st.start, hEnd = m ? mix(m.from.end, st.end, m.t) : st.end;
+  const hFast = m ? mix(m.from.fast, st.fast, m.t) : st.fast, hLow = m ? mix(m.from.lowY, target.lowY, m.t) : target.lowY;
+  const shown = easeInOut(chartDraw);
+  let out = `<rect width="${W}" height="${H}" fill="transparent"/>`;
+
+  const ys = niceStep(d.yMax - d.yMin, 5);
+  for (let v = Math.ceil(d.yMin / ys) * ys; v <= d.yMax + 1e-9; v += ys) {
+    out += `<line x1="${M.l}" x2="${W - M.r}" y1="${Y(v)}" y2="${Y(v)}" stroke="${C.grid}"/>
+      <text x="${M.l - 8}" y="${Y(v) + 4}" text-anchor="end" fill="${C.text}" font-size="12">${fmt(v)}</text>`;
+  }
+  const xs = niceStep(d.xMax, Math.max(4, Math.floor(px / 90)));
+  for (let v = 0; v <= d.xMax + 1e-9; v += xs) {
+    out += `<text x="${X(v)}" y="${H - M.b + 18}" text-anchor="middle" fill="${C.text}" font-size="12">${fmt(v)}</text>`;
+  }
+  out += `<text x="${M.l + px / 2}" y="${H - 7}" text-anchor="middle" fill="${C.text}" font-size="12.5">Hand speed (inches per second)</text>
+    <text transform="translate(14 ${M.t + py / 2}) rotate(-90)" text-anchor="middle" fill="${C.text}" font-size="12.5">Valorant sens at that speed</text>`;
+
+  if (st.hist) {
+    const max = Math.max(...st.hist);
+    const barW = Math.max(1, X(HBIN) - X(0) - 2);
+    st.hist.forEach((v, i) => {
+      if (!v || i * HBIN > d.xMax) return;
+      const h = v / max * py * 0.28 * shown;
+      out += `<rect x="${X(i * HBIN) + 1}" y="${M.t + py - h}" width="${barW}" height="${h}" fill="${C.bar}"/>`;
+    });
+  }
+
+  out += `<line x1="${M.l}" x2="${W - M.r}" y1="${Y(st.sens)}" y2="${Y(st.sens)}" stroke="${C.flat}" stroke-width="1.5" stroke-dasharray="5 5"/>`;
+
+  const n = Math.max(120, Math.floor(px / 3));
+  const path = fn => { let p = ''; for (let i = 0; i <= n; i++) { const x = Math.max(0.05, i / n * d.xMax); p += (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(clamp(fn(x), d.yMin - 1, d.yMax + 1)).toFixed(1); } return p; };
+  out += `<defs><clipPath id="plot"><rect x="${M.l}" y="${M.t}" width="${px * shown}" height="${py}"/></clipPath></defs><g clip-path="url(#plot)">`;
+  // Shade the gap between today's sens and the curve: that gap is the boost.
+  out += `<path d="${path(eff)}L${X(d.xMax).toFixed(1)} ${Y(st.sens).toFixed(1)}L${X(0).toFixed(1)} ${Y(st.sens).toFixed(1)}Z" fill="${C.curve}" opacity="0.1"/>`;
+  if (st.showGain) {
+    const gain = x => { const e = Math.max(x * 0.002, 0.01); return c.base * ((x + e) * c.s(x + e) - (x - e) * c.s(x - e)) / (2 * e); };
+    out += `<path d="${path(gain)}" fill="none" stroke="${C.gain}" stroke-width="1.5" stroke-dasharray="2 4"/>`;
+  }
+  out += `<path d="${path(eff)}" fill="none" stroke="${C.curve}" stroke-width="2.5" stroke-linejoin="round"/></g>`;
+
+  if (hoverX != null && hoverX <= d.xMax) {
+    out += `<line x1="${X(hoverX)}" x2="${X(hoverX)}" y1="${M.t}" y2="${M.t + py}" stroke="${C.cross}"/>
+      <circle cx="${X(hoverX)}" cy="${Y(eff(hoverX))}" r="4" fill="${C.curve}" stroke="${C.fill}" stroke-width="2"/>`;
+  }
+
+  const handle = (id, x, y, label, anchor) => X(x) > M.l + px * shown + 1 ? '' : `
+    <g class="handle" data-h="${id}" tabindex="-1">
+      <circle cx="${X(x)}" cy="${Y(y)}" r="20" fill="transparent"/>
+      <circle cx="${X(x)}" cy="${Y(y)}" r="7.5" fill="${C.fill}" stroke="${C.curve}" stroke-width="3"/>
+      <text x="${X(x) + (anchor === 'end' ? -13 : 13)}" y="${Y(y) + (anchor === 'end' ? -10 : 18)}" text-anchor="${anchor}" fill="${C.label}" font-size="12.5">${label}</text>
+    </g>`;
+  out += handle('a', hStart, hLow, 'Boost starts', 'start');
+  if (chartDraw >= 1) out += `<line x1="${X(hEnd)}" x2="${W - M.r}" y1="${Y(hFast)}" y2="${Y(hFast)}" stroke="${C.curve}" stroke-width="1" stroke-dasharray="2 4"/>`;
+  out += handle('b', hEnd, hFast, 'Top sens: the curve levels off toward this line', X(hEnd) > M.l + px * 0.55 ? 'end' : 'start');
+  svg.innerHTML = out;
+}
+
+function hoverTip(x, clientX, clientY) {
+  const c = buildCurve(st), s = c.base * c.s(x);
+  const box = chartEl.getBoundingClientRect();
+  let share = '';
+  if (st.hist) {
+    const total = st.hist.reduce((a, b) => a + b, 0), i = Math.floor(x / HBIN);
+    if (total && st.hist[i] != null) share = `<br>${fmt(st.hist[i] / total * 100, 1)}% of your test time near this speed`;
+  }
+  tip.innerHTML = `<b>${fmt(x, 1)} in/s</b> (${fmt(x * 2.54, 0)} cm/s)<br>Sens ${fmt(s)}, ${fmt(cm360(s, st.dpi), 1)} cm/360${share}`;
+  tip.style.display = 'block';
+  const left = clientX - box.left + 14, tw = tip.offsetWidth;
+  tip.style.left = (left + tw > box.width ? left - tw - 28 : left) + 'px';
+  tip.style.top = Math.max(4, clientY - box.top - 56) + 'px';
+}
+
+let drag = null;
+chartEl.addEventListener('pointerdown', e => {
+  const h = e.target.closest && e.target.closest('.handle');
+  if (!h) return;
+  if (stopMorph) stopMorph();
+  morph = stopMorph = null;
+  drag = h.dataset.h;
+  frozen = view.d;
+  chartEl.setPointerCapture(e.pointerId);
+  tip.style.display = 'none';
+  e.preventDefault();
+});
+chartEl.addEventListener('pointermove', e => {
+  if (!view) return;
+  const box = chartEl.getBoundingClientRect();
+  const mx = e.clientX - box.left, my = e.clientY - box.top;
+  const dataX = clamp((mx - M.l) / view.px, 0, 1) * view.d.xMax;
+  const dataY = view.d.yMin + (1 - clamp((my - M.t) / view.py, 0, 1)) * (view.d.yMax - view.d.yMin);
+  if (drag) {
+    const x = Math.round(dataX * 2) / 2, y = Math.round(dataY * 1000) / 1000;
+    if (drag === 'a') {
+      st.start = Math.min(x, st.end - 2);
+      st.slow = Math.min(y, st.fast / 1.01);
+    } else {
+      st.end = Math.max(x, st.start + 2);
+      st.fast = Math.max(y, st.slow * 1.01);
+    }
+    st.preset = null;
+    render();
+    return;
+  }
+  const inside = mx >= M.l && mx <= view.W - M.r && my >= M.t && my <= M.t + view.py;
+  hoverX = inside ? Math.max(0.05, dataX) : null;
+  if (inside) hoverTip(hoverX, e.clientX, e.clientY); else tip.style.display = 'none';
+  drawChart();
+});
+const endDrag = () => { if (drag) { drag = null; frozen = null; render(); } };
+chartEl.addEventListener('pointerup', endDrag);
+chartEl.addEventListener('pointercancel', endDrag);
+chartEl.addEventListener('pointerleave', () => { if (!drag) { hoverX = null; tip.style.display = 'none'; drawChart(); } });
+new ResizeObserver(drawChart).observe(chartEl);
+
+/* ---------- Page ---------- */
+const RUN_LABEL = { flat: 'Normal sens', curve: 'Your curve', hand: 'Hand check' };
+const INPUTS = ['dpi', 'sens', 'slow', 'fast', 'start', 'end', 'exp'];
+// The slider is logarithmic: small values need the finest control.
+const ACCEL_MIN = 0.0005, ACCEL_SPAN = 100;
+const sliderToAccel = p => ACCEL_MIN * Math.pow(ACCEL_SPAN, p / 100);
+const accelToSlider = v => Math.log(v / ACCEL_MIN) / Math.log(ACCEL_SPAN) * 100;
+const linearAccel = () => (st.fast / st.slow - 1) / (2 * (st.end - st.start));
+function syncInputs() {
+  for (const id of INPUTS) if (document.activeElement !== $(id)) $(id).value = +fmt(st[id], id === 'dpi' ? 0 : 3);
+  $('mode').value = st.mode;
+  const ratio = st.fast / st.slow;
+  const k = st.dpi / 1000, panelAccel = linearAccel() / k;
+  if (document.activeElement !== $('accel')) $('accel').value = +fmt(panelAccel, 6);
+  if (document.activeElement !== $('offset')) $('offset').value = +fmt(st.start * k, 3);
+  if (document.activeElement !== $('accelSlider')) $('accelSlider').value = accelToSlider(panelAccel);
+  $('accelSlider').style.setProperty('--pct', clamp(accelToSlider(panelAccel), 0, 100) + '%');
+  $('accelOut').textContent = fmt(panelAccel, 6);
+  if (document.activeElement !== $('capOut')) $('capOut').value = +fmt(ratio, 3);
+  $('showGain').checked = st.showGain;
+  $('sound').checked = st.sound;
+  const boost = Math.round((st.fast / st.slow - 1) * 100);
+  if (document.activeElement !== $('strength')) $('strength').value = boost;
+  $('strength').style.setProperty('--pct', clamp((boost - 5) / 75 * 100, 0, 100) + '%');
+  $('strengthOut').textContent = st.mode === 'linear' ? `${fmt(ratio, 3)} (+${boost}%)` : `+${boost}%`;
+}
+// The number to type into Valorant counts to its new value, so a change there can't be missed.
+let bigShown = null, stopBig = null;
+function setBigSens(v) {
+  const el = $('outSens');
+  if (bigShown === null) { bigShown = v; el.textContent = fmt(v); return; }
+  if (Math.abs(v - bigShown) < 1e-9) return;
+  if (stopBig) stopBig();
+  const from = bigShown;
+  stopBig = tween(320, t => { bigShown = t >= 1 ? v : mix(from, v, easeOut(t)); el.textContent = fmt(bigShown); });
+}
+// Values that just changed flash once, so you know what to retype in RawAccel.
+let lastValues = null;
+function renderValues() {
+  const rows = appValues(st, st.dpi), now = {};
+  $('valueRows').innerHTML = rows.map(r => {
+    if (r.group) return `<tr><th class="group" colspan="2" scope="colgroup">${esc(r.group)}</th></tr>`;
+    now[r.k] = r.v;
+    const changed = lastValues && lastValues[r.k] !== r.v;
+    return `<tr${changed ? ' class="chg"' : ''}><th scope="row">${esc(r.k)}</th><td>${esc(r.v)}</td></tr>`;
+  }).join('');
+  lastValues = now;
+}
+
+/* ---------- Hero graph: the player's own curve, drawn once, then theirs to scrub ---------- */
+const HERO = { W: 460, H: 236, l: 6, r: 10, t: 12, b: 26, xMax: 60 };
+let heroSpeed = calm() ? HERO.xMax : 0.5, heroReveal = calm() ? 1 : 0;
+function drawHero() {
+  const c = buildCurve(st), eff = x => c.base * c.s(x), { W, H, l, r, t, b, xMax } = HERO;
+  const lo = Math.min(st.sens, eff(0.5)), hi = Math.max(eff(xMax), st.sens), pad = (hi - lo) * 0.16 + hi * 0.01;
+  const X = v => l + v / xMax * (W - l - r), Y = v => t + (1 - (v - lo + pad) / (hi - lo + 2 * pad)) * (H - t - b);
+  let line = '';
+  for (let i = 0; i <= 90; i++) { const x = Math.max(0.05, i / 90 * xMax); line += (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(eff(x)).toFixed(1); }
+  const yF = Y(st.sens).toFixed(1), cut = X(xMax * heroReveal) - l + 2;
+  const s = eff(heroSpeed), hx = X(heroSpeed), hy = Y(s);
+  let grid = '';
+  for (let i = 1; i <= 3; i++) { const gy = t + i / 4 * (H - t - b); grid += `<line class="h-grid" x1="${l}" x2="${W - r}" y1="${gy}" y2="${gy}"/>`; }
+  $('heroSvg').innerHTML = `${grid}
+    <line class="h-flat" x1="${l}" x2="${W - r}" y1="${yF}" y2="${yF}"/>
+    <text class="h-text" x="${l + 2}" y="${+yF + 17}">Your sens today</text>
+    <defs><clipPath id="heroCut"><rect x="${l - 3}" y="0" width="${cut + 3}" height="${H}"/></clipPath></defs>
+    <g clip-path="url(#heroCut)">
+      <path class="h-area" d="${line}L${X(xMax)} ${yF}L${X(0)} ${yF}Z"/>
+      <path class="h-curve" d="${line}"/>
+    </g>
+    <line class="h-guide" x1="${hx}" x2="${hx}" y1="${t}" y2="${H - b}"/>
+    <circle class="h-dot" cx="${hx}" cy="${hy}" r="7"/>
+    <text class="h-text" x="${l + 2}" y="${H - 7}">Slow hand</text>
+    <text class="h-text" x="${W - r - 2}" y="${H - 7}" text-anchor="end">Fast hand</text>`;
+  $('heroSpeed').textContent = `${fmt(heroSpeed, 0)} in/s`;
+  $('heroSens').textContent = fmt(s);
+  $('heroCm').textContent = `${fmt(cm360(s, st.dpi), 1)} cm`;
+}
+$('heroSvg').addEventListener('pointermove', e => {
+  if (heroReveal < 1) return;
+  const box = $('heroSvg').getBoundingClientRect();
+  heroSpeed = clamp((e.clientX - box.left) / box.width * HERO.W - HERO.l, 0, HERO.W - HERO.l - HERO.r) / (HERO.W - HERO.l - HERO.r) * HERO.xMax;
+  heroSpeed = Math.max(0.5, heroSpeed);
+  drawHero();
+});
+
+function render() {
+  normalize();
+  const c = buildCurve(st);
+  syncInputs();
+  drawChart();
+
+  const curCm = cm360(st.sens, st.dpi);
+  $('setupRead').innerHTML = `A full 360° turn takes <b>${fmt(curCm, 1)} cm</b> of mouse movement today.`;
+  $('setupWarn').hidden = curCm >= 15 && curCm <= 120;
+  $('setupWarn').textContent = curCm < 15
+    ? 'That\'s very fast. Most Valorant players use roughly 25 to 80 cm, so check your DPI and sens are right before testing.'
+    : 'That\'s very slow. Most Valorant players use roughly 25 to 80 cm, so check your DPI and sens are right before testing.';
+  $('slowCm').textContent = `${fmt(cm360(st.slow, st.dpi), 1)} cm/360`;
+  $('fastCm').textContent = `${fmt(cm360(st.fast, st.dpi), 1)} cm/360`;
+  $('startCm').textContent = `${fmt(st.start * 2.54, 0)} cm/s`;
+  $('endCm').textContent = `${fmt(st.end * 2.54, 0)} cm/s`;
+  const linear = st.mode === 'linear';
+  $('expWrap').hidden = st.mode !== 'classic';
+  $('accelWrap').hidden = $('capWrap').hidden = !linear;
+  $('fastWrap').hidden = $('endWrap').hidden = linear;
+  $('startWrap').hidden = linear;
+  $('offsetWrap').hidden = $('accelSliderWrap').hidden = !linear;
+  $('strengthLabel').textContent = linear ? 'Cap: Output' : 'Speed boost on fast swings';
+  $('offsetNote').textContent = `Boost starts at ${fmt(st.start, 1)} in/s (${fmt(st.start * 2.54, 0)} cm/s)`;
+  $('accelNote').textContent = `Reaches the cap at ${fmt(st.end, 1)} in/s`;
+  $('capNote').textContent = `Top sens ${fmt(st.fast)}`;
+  $('lgGain').hidden = !st.showGain;
+  $('lgHist').hidden = !st.hist;
+
+  $('speedRows').innerHTML = [[5, 'Slow'], [15, 'Medium'], [30, 'Fast'], [60, 'Very fast']].map(([x, name]) => {
+    const s = c.base * c.s(x), pct = (s / st.sens - 1) * 100;
+    return `<tr><td>${name} (${x} in/s)</td><td>${fmt(s)}</td><td>${fmt(cm360(s, st.dpi), 1)} cm</td><td>${pct >= 0 ? '+' : ''}${fmt(pct, 0)}%</td></tr>`;
+  }).join('');
+
+  document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === st.preset));
+
+  setBigSens(c.base);
+  drawHero();
+  const json = settingsJSON(st, st.dpi);
+  $('json').textContent = json;
+
+  renderValues();
+  const fileOnly = st.lr !== 1 || st.ud !== 1;
+  $('fileOnly').hidden = !fileOnly;
+  $('fileOnly').textContent = 'Your left and up hand fixes have no field in the app, so they only work through the downloaded file.';
+  $('raVersion').value = st.raVersion;
+
+  if (st.hist) {
+    $('measured').hidden = false;
+    $('measureRead').textContent = `Test done. Half the time your hand moved under ${fmt(histPct(0.5), 0)} in/s, and your flicks peaked around ${fmt(median(st.peaks), 0)} in/s. Your recommended curve is in step 3.`;
+  }
+  const res = Object.entries(st.results);
+  $('results').hidden = !res.length;
+  $('resultRows').innerHTML = res.map(([k, r]) => `<tr><td>${RUN_LABEL[k]}</td><td>${fmt(r.median, 0)} ms</td><td>${fmt(r.accuracy * 100, 0)}%</td><td>${r.headshot == null ? 'n/a' : fmt(r.headshot * 100, 0) + '%'}</td></tr>`).join('');
+  renderRec();
+  save();
+}
+
+function sparkPath(p) {
+  const c = buildCurve({ mode: p.mode, slow: 1, fast: p.hi, start: p.start, end: p.end, exp: 2 });
+  let d = '';
+  for (let i = 0; i <= 30; i++) { const x = Math.max(0.05, i / 30 * 70); d += (i ? 'L' : 'M') + (x / 70 * 100).toFixed(1) + ' ' + (28 - (c.s(x) - 1) / 0.6 * 24).toFixed(1); }
+  return d;
+}
+$('presets').innerHTML = PRESETS.map(p => `<button type="button" data-id="${p.id}" aria-pressed="false"><svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d="${sparkPath(p)}"/></svg>${p.name}<small>${p.note}</small></button>`).join('');
+$('presets').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const p = PRESETS.find(q => q.id === b.dataset.id);
+  changeCurve(() => Object.assign(st, { mode: p.mode, slow: st.sens * p.lo, fast: st.sens * p.hi, start: p.start, end: p.end, preset: p.id }));
+});
+for (const id of INPUTS) {
+  $(id).addEventListener('input', () => {
+    const v = parseFloat($(id).value);
+    if (!isFinite(v) || v <= 0 && id !== 'start') return;
+    if (id === 'sens') { const k = v / st.sens; st.slow *= k; st.fast *= k; }
+    st[id] = v;
+    if (id !== 'dpi' && id !== 'sens') st.preset = null;
+    render();
+  });
+  $(id).addEventListener('blur', syncInputs);
+}
+// Linear's fields work like RawAccel's: Acceleration and Cap: Output set the slope and the top separately.
+function setAccel(panelValue) {
+  st.end = st.start + (st.fast / st.slow - 1) / (2 * panelValue * (st.dpi / 1000));
+  st.preset = null;
+  render();
+}
+$('accel').addEventListener('input', () => {
+  const v = parseFloat($('accel').value);
+  if (!isFinite(v) || v <= 0) return;
+  setAccel(v);
+});
+$('accelSlider').addEventListener('input', () => setAccel(sliderToAccel(parseFloat($('accelSlider').value))));
+$('offset').addEventListener('input', () => {
+  const v = parseFloat($('offset').value);
+  if (!isFinite(v) || v < 0) return;
+  const start = v / (st.dpi / 1000);
+  st.end += start - st.start; // an offset slides the ramp without changing its slope
+  st.start = start;
+  st.preset = null;
+  render();
+});
+$('offset').addEventListener('blur', syncInputs);
+$('capOut').addEventListener('input', () => {
+  const v = parseFloat($('capOut').value);
+  if (!isFinite(v) || v <= 1) return;
+  const a = linearAccel();
+  st.fast = st.slow * v;
+  st.end = st.start + (v - 1) / (2 * a);
+  st.preset = null;
+  render();
+});
+$('accel').addEventListener('blur', syncInputs);
+$('capOut').addEventListener('blur', syncInputs);
+$('strength').addEventListener('input', () => {
+  const top = 1 + parseFloat($('strength').value) / 100, a = linearAccel();
+  st.fast = st.slow * top;
+  if (st.mode === 'linear') st.end = st.start + (top - 1) / (2 * a);
+  st.preset = null;
+  render();
+});
+$('startGuide').addEventListener('click', () => {
+  $('step1').scrollIntoView();
+  $('dpi').focus({ preventScroll: true });
+});
+$('raVersion').addEventListener('change', () => { st.raVersion = $('raVersion').value === '1.6' ? '1.6' : '1.7'; render(); });
+$('mode').addEventListener('change', () => changeCurve(() => {
+  st.mode = $('mode').value;
+  if (st.mode === 'classic' && st.exp === 2) st.exp = 2.5; // at 2 RawAccel treats Classic as Linear
+  st.preset = null;
+}));
+$('showGain').addEventListener('change', () => { st.showGain = $('showGain').checked; render(); });
+$('sound').addEventListener('change', () => { st.sound = $('sound').checked; save(); });
+function saveFile(name, text, type) {
+  const url = URL.createObjectURL(new Blob([text], { type }));
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+$('download').addEventListener('click', () => saveFile('settings.json', settingsJSON(st, st.dpi), 'application/json'));
+$('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(settingsJSON(st, st.dpi)); $('copy').textContent = 'Copied'; }
+  catch (e) { $('copy').textContent = 'Copy failed, use See the JSON'; }
+  setTimeout(() => { $('copy').textContent = 'Copy JSON'; }, 1800);
+});
+
+/* ---------- Aim test ---------- */
+const FOV = 103;
+const RUN_SPEED = 5;   // m/s, for strafes and peeks
+const HIDDEN = 0.5;    // meters behind the wall edge before a peek
+const EYE_H = 1.5;     // eye height above the floor, in meters
+const HEAD_R = 0.13, BODY_R = 0.27, BODY_H = 1.55, BODY_HITS_TO_KILL = 3;
+const rad = d => d * Math.PI / 180;
+const wrap180 = d => ((d + 180) % 360 + 360) % 360 - 180;
+let T = null;
+let seed = (Math.random() * 1e9) | 0; // flat and curve runs share one target layout per page load
+
+function mulberry(a) {
+  return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+}
+// Each enemy is a small scenario. Distances are meters, times are ms.
+function layout() {
+  const rand = mulberry(seed);
+  const between = (a, b) => a + rand() * (b - a);
+  const bands = [...Array(8).fill('peek'), ...Array(7).fill('flick'), ...Array(5).fill('strafe'), ...Array(4).fill('turn')];
+  for (let i = bands.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [bands[i], bands[j]] = [bands[j], bands[i]]; }
+  const swing = { peek: [4, 12], flick: [15, 40], strafe: [5, 25], turn: [60, 130] };
+  const limit = { flick: 2200, strafe: 3000, turn: 3500 };
+  let yaw = 0;
+  return bands.map(band => {
+    const side = rand() < 0.5 ? -1 : 1;
+    yaw += side * between(...swing[band]);
+    const t = { band, yaw, dist: between(10, 26), elev: 0, delay: between(250, 650) };
+    if ((band === 'flick' || band === 'turn') && rand() < 0.25) t.elev = between(2.5, 3.5); // up on a ledge
+    if (band === 'strafe') {
+      const amp = between(1.5, 3);
+      Object.assign(t, { amp, period: 4 * amp / RUN_SPEED * 1000, phase: rand(), limit: limit.strafe });
+    } else if (band === 'peek') {
+      const out = between(1, 2.5), hold = between(350, 800);
+      Object.assign(t, { peekSide: rand() < 0.5 ? -1 : 1, out, hold, tMove: (out + HIDDEN) / RUN_SPEED * 1000 });
+      t.limit = t.tMove * 2 + t.hold;
+    } else {
+      t.limit = limit[band];
+    }
+    return t;
+  });
+}
+// Hand check: still enemies, balanced so every direction gets enough flicks to compare.
+function handLayout() {
+  const rand = mulberry(seed ^ 0x5bd1e995);
+  const between = (a, b) => a + rand() * (b - a);
+  const moves = [];
+  for (const dir of ['right', 'left']) for (let i = 0; i < 12; i++) moves.push({ dir, big: i % 2 === 0 });
+  for (let i = 0; i < 6; i++) moves.push({ dir: 'vertical' });
+  for (let i = moves.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [moves[i], moves[j]] = [moves[j], moves[i]]; }
+  let yaw = 0;
+  const list = [];
+  const add = (band, elevDeg, dist) => list.push({ band, yaw, dist, elev: dist * Math.tan(rad(elevDeg)), delay: between(350, 700), limit: 3000 });
+  for (const m of moves) {
+    if (m.dir === 'vertical') {
+      // up to a ledge, then back down to floor level
+      const dist = between(14, 24);
+      add('up', between(8, 14), dist);
+      add('down', 0, dist);
+    } else {
+      yaw += (m.dir === 'right' ? 1 : -1) * (m.big ? between(30, 70) : between(8, 22));
+      add(m.dir, 0, between(14, 24));
+    }
+  }
+  return list;
+}
+// How far the enemy has moved sideways from its anchor point, in meters.
+function lateral(t, ms) {
+  if (t.band === 'strafe') {
+    const p = (ms / t.period + t.phase) % 1;
+    return t.amp * (p < 0.5 ? 4 * p - 1 : 3 - 4 * p);
+  }
+  if (t.band === 'peek') {
+    const span = t.out + HIDDEN;
+    const pos = ms < t.tMove ? ms / t.tMove : ms < t.tMove + t.hold ? 1 : 1 - (ms - t.tMove - t.hold) / t.tMove;
+    return t.peekSide * (clamp(pos, 0, 1) * span - HIDDEN);
+  }
+  return 0;
+}
+const deg = r => r * 180 / Math.PI;
+const worldPoint = (t, L, h, yaw, pitch) => toCamera({ yaw: t.yaw + deg(Math.atan2(L, t.dist)), pitch: deg(Math.atan2(h, t.dist)) }, yaw, pitch);
+const headCam = (t, ms, yaw, pitch) => worldPoint(t, lateral(t, ms), t.elev, yaw, pitch);
+// Where the crosshair sits on the enemy, in meters from the head center.
+function hitTest(t, ms, yaw, pitch) {
+  const c = headCam(t, ms, yaw, pitch);
+  if (c.z <= 0.05) return 'miss';
+  const x = c.x / c.z * t.dist, y = c.y / c.z * t.dist; // + means the head is right of / above the crosshair
+  if (t.band === 'peek' && t.peekSide * (lateral(t, ms) - x) <= 0) return 'miss'; // that spot is behind the wall
+  if (Math.hypot(x, y) <= HEAD_R) return 'head';
+  if (Math.abs(x) <= BODY_R && y >= 0.1 && y <= BODY_H) return 'body';
+  return 'miss';
+}
+function toCamera(t, yaw, pitch) {
+  const ty = rad(t.yaw), tp = rad(t.pitch), cy = rad(yaw), cp = rad(pitch);
+  const x = Math.cos(tp) * Math.sin(ty), y = Math.sin(tp), z = Math.cos(tp) * Math.cos(ty);
+  const x1 = x * Math.cos(cy) - z * Math.sin(cy), z1 = x * Math.sin(cy) + z * Math.cos(cy);
+  return { x: x1, y: y * Math.cos(cp) - z1 * Math.sin(cp), z: y * Math.sin(cp) + z1 * Math.cos(cp) };
+}
+function openTest(kind) {
+  const curve = kind === 'flat' ? null : buildCurve(st);
+  T = {
+    kind, curve, sens: curve ? curve.base : st.sens, running: false, theme: currentTheme(),
+    lr: curve ? st.lr : 1, ud: curve ? st.ud : 1, rot: curve ? st.rot : 0,
+  };
+  $('test').classList.add('on');
+  $('testStart').hidden = false;
+  $('testErr').textContent = '';
+  $('testTitle').textContent = kind === 'flat' ? 'Aim test' : kind === 'hand' ? 'Hand check' : 'Try your curve';
+  $('testBody').textContent = kind === 'hand'
+    ? 'Flick to each enemy in one clean motion, then click the head. Don\'t slow down to be careful: your first flick is what gets measured. Use your normal grip. Press Esc to quit without saving.'
+    : 'Aim like it\'s a real match and keep your crosshair at head height. One headshot kills, three body shots kill, and enemies leave if you take too long. An arrow points to anyone off screen. Press Esc to quit without saving.';
+  $('testGo').focus();
+}
+function closeTest() {
+  T = null;
+  $('test').classList.remove('on');
+  if (document.pointerLockElement) document.exitPointerLock();
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
+function onMove(dx, dy, ts) {
+  if (!T || !T.running) return;
+  const dt = clamp(ts - T.last, 1, 100);
+  T.last = ts;
+  const speed = Math.hypot(dx, dy) / dt * 1000 / st.dpi; // in/s, same as RawAccel with DPI set
+  const k = T.curve ? T.curve.s(Math.max(speed, 0.05)) : 1;
+  const perCount = VAL_YAW * T.sens * k;
+  // Same order as RawAccel: rotate first, then left and up multipliers on the output.
+  const a = rad(T.rot), cos = Math.cos(a), sin = Math.sin(a);
+  let ox = dx * cos - dy * sin, oy = dx * sin + dy * cos;
+  if (ox < 0) ox *= T.lr;
+  if (oy < 0) oy *= T.ud;
+  T.yaw += ox * perCount;
+  T.pitch = clamp(T.pitch - oy * perCount, -85, 85);
+  T.path += Math.hypot(ox, oy) * perCount;
+  T.samples.push([Math.round(ts - T.t0), dx, dy, +dt.toFixed(2), +speed.toFixed(2), +k.toFixed(4), +T.yaw.toFixed(3), +T.pitch.toFixed(3), T.i]);
+  if (speed > 0.2) {
+    const bin = Math.min(HBINS - 1, Math.floor(speed / HBIN));
+    T.hist[bin] += dt;
+    T.peak = Math.max(T.peak, speed);
+  }
+}
+function onShot() {
+  if (!T || !T.running) return;
+  const tgt = T.targets[T.i];
+  const now = performance.now(), ms = now - T.spawn;
+  if (ms < 0) return; // nobody on screen yet
+  const c = headCam(tgt, ms, T.yaw, T.pitch);
+  const error = Math.acos(clamp(c.z, -1, 1));
+  const result = hitTest(tgt, ms, T.yaw, T.pitch);
+
+  // Aim error split along the line from where this enemy's flick began.
+  const targetYaw = tgt.yaw + deg(Math.atan2(lateral(tgt, ms), tgt.dist));
+  const targetPitch = deg(Math.atan2(tgt.elev, tgt.dist));
+  const offYaw = wrap180(T.yaw - targetYaw), offPitch = T.pitch - targetPitch;
+  const lineYaw = wrap180(targetYaw - T.fromYaw), linePitch = targetPitch - T.fromPitch;
+  const dist = Math.hypot(lineYaw, linePitch) || 1;
+  const ux = lineYaw / dist, uy = linePitch / dist;
+
+  T.shots.push({
+    shot: T.shots.length + 1, target: T.i + 1, band: tgt.band, result, hit: result !== 'miss',
+    tMs: Math.round(now - T.t0), timeMs: Math.round(ms),
+    distanceM: +tgt.dist.toFixed(1), elevated: tgt.elev > 0,
+    targetDistDeg: +dist.toFixed(2),
+    errorDeg: +deg(error).toFixed(3),
+    errorYawDeg: +offYaw.toFixed(3), errorPitchDeg: +offPitch.toFixed(3),
+    overshootDeg: +(offYaw * ux + offPitch * uy).toFixed(3),
+    sideErrorDeg: +(offYaw * uy - offPitch * ux).toFixed(3),
+    peakSpeedInS: +T.peak.toFixed(1),
+    pathDeg: +T.path.toFixed(2),
+  });
+
+  if (result === 'miss') {
+    T.misses++;
+    T.flash = { text: 'Miss', until: now + 350 };
+    return;
+  }
+  T.hitMark = { until: now + 170, strong: result === 'head' };
+  T.hitAt = now;
+  addBurst(now, result === 'head' ? 16 : 6);
+  T.hits++;
+  if (result === 'head') T.heads++;
+  else T.bodyHits++;
+  const kill = result === 'head' || T.bodyHits >= BODY_HITS_TO_KILL;
+  if (audio && st.sound) (kill ? playPop : playTick)(audio);
+  T.flash = { text: result === 'head' ? 'Headshot' : kill ? 'Body kill' : 'Body', until: now + 450 };
+  if (kill) {
+    T.times.push(ms);
+    if (tgt.band === 'flick' || tgt.band === 'turn') T.peaks.push(T.peak);
+    T.ghost = { t: tgt, ms, from: now };
+    endTarget(result === 'head' ? 'head' : 'body', ms);
+  }
+}
+function addBurst(now, count) {
+  for (let i = 0; i < count; i++) {
+    const a = Math.random() * Math.PI * 2, speed = 90 + Math.random() * 240;
+    T.sparks.push({ from: now, vx: Math.cos(a) * speed, vy: Math.sin(a) * speed, life: 220 + Math.random() * 200, size: 1.5 + Math.random() * 2.5 });
+  }
+}
+function endTarget(outcome, ms) {
+  T.outcomes.push({ target: T.i + 1, band: T.targets[T.i].band, outcome, timeMs: Math.round(ms) });
+  if (outcome === 'escaped') T.escaped++;
+  T.i++;
+  if (T.i >= T.targets.length) { finishTest(); return; }
+  markSpawn();
+}
+function markSpawn() {
+  Object.assign(T, { spawn: performance.now() + T.targets[T.i].delay, fromYaw: T.yaw, fromPitch: T.pitch, peak: 0, path: 0, bodyHits: 0 });
+}
+function finishTest() {
+  const shots = T.hits + T.misses;
+  const r = { median: median(T.times), accuracy: shots ? T.hits / shots : 0, headshot: T.hits ? T.heads / T.hits : 0 };
+  st.results[T.kind] = r;
+  if (T.kind === 'flat') { st.hist = T.hist; st.peaks = T.peaks; }
+  const avg = key => T.shots.length ? T.shots.reduce((sum, s) => sum + s[key], 0) / T.shots.length : 0;
+  const id = Date.now();
+  const run = {
+    id, schema: 2, seed, date: new Date(id).toISOString(), kind: T.kind, rawInput: T.raw, dpi: st.dpi, sens: T.sens,
+    curve: T.curve ? { mode: st.mode, slow: st.slow, fast: st.fast, start: st.start, end: st.end, exp: st.exp } : null,
+    hand: { lr: T.lr, ud: T.ud, rot: T.rot },
+    configKey: handKey(st),
+    summary: {
+      medianMs: Math.round(r.median), accuracy: r.accuracy, headshotRate: r.headshot,
+      kills: T.outcomes.length - T.escaped, escaped: T.escaped, hits: T.hits, heads: T.heads, misses: T.misses,
+      avgErrorDeg: +avg('errorDeg').toFixed(3), avgOvershootDeg: +avg('overshootDeg').toFixed(3),
+    },
+    shots: T.shots,
+    targets: T.outcomes,
+  };
+  const movement = { runId: id, columns: SAMPLE_COLUMNS, samples: T.samples };
+  const kind = T.kind;
+  T.running = false;
+  closeTest();
+  render();
+  // Leaving fullscreen resizes the page, so wait a moment before moving to the results.
+  if (kind !== 'hand') setTimeout(() => $('step3').scrollIntoView(), 200);
+  return saveRun(run, movement).then(refreshHistory).catch(storageFailed);
+}
+
+/* ---------- Pop sound, synthesized so no audio files are needed ---------- */
+let audio = null;
+function playPop(ctx, when = ctx.currentTime) {
+  const body = ctx.createGain();
+  body.gain.setValueAtTime(0.0001, when);
+  body.gain.exponentialRampToValueAtTime(0.5, when + 0.003);
+  body.gain.exponentialRampToValueAtTime(0.0001, when + 0.09);
+  body.connect(ctx.destination);
+  const osc = ctx.createOscillator();
+  osc.frequency.setValueAtTime(950, when);
+  osc.frequency.exponentialRampToValueAtTime(220, when + 0.07);
+  osc.connect(body);
+  osc.start(when);
+  osc.stop(when + 0.1);
+
+  // a very short noise burst gives the bubble its snap
+  const noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.015), ctx.sampleRate);
+  const ch = noise.getChannelData(0);
+  for (let i = 0; i < ch.length; i++) ch[i] = (Math.random() * 2 - 1) * (1 - i / ch.length);
+  const snap = ctx.createBufferSource();
+  snap.buffer = noise;
+  const snapGain = ctx.createGain();
+  snapGain.gain.value = 0.2;
+  snap.connect(snapGain).connect(ctx.destination);
+  snap.start(when);
+}
+
+function playTick(ctx, when = ctx.currentTime) {
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.25, when);
+  g.gain.exponentialRampToValueAtTime(0.0001, when + 0.04);
+  g.connect(ctx.destination);
+  const osc = ctx.createOscillator();
+  osc.frequency.setValueAtTime(320, when);
+  osc.connect(g);
+  osc.start(when);
+  osc.stop(when + 0.05);
+}
+
+/* ---------- Curve advice from saved movement. Rules of thumb, shown with their numbers. ---------- */
+function recommend(runs, moves, cfg) {
+  const flat = runs.filter(r => r.schema === 2 && r.kind === 'flat' && r.dpi === cfg.dpi && Math.abs(r.sens - cfg.sens) < 0.001).slice(-5);
+  if (!flat.length) return { ready: false };
+  const pct = (list, p) => { const s = [...list].sort((a, b) => a - b); return s.length ? s[Math.min(s.length - 1, Math.floor(p * s.length))] : 0; };
+  const moveOf = new Map(moves.map(m => [m.runId, m]));
+
+  // Speeds in the last 200 ms before each click: the range that must stay precise.
+  const aimSpeeds = [];
+  for (const r of flat) {
+    const m = moveOf.get(r.id);
+    if (!m) continue;
+    for (const s of r.shots) for (const row of m.samples) {
+      if (row[0] > s.tMs - 200 && row[0] <= s.tMs && row[4] > 0.2) aimSpeeds.push(row[4]);
+    }
+  }
+  const firstShots = flat.flatMap(r => {
+    const seen = new Set();
+    return r.shots.filter(s => (s.band === 'flick' || s.band === 'turn') && !seen.has(s.target) && seen.add(s.target));
+  });
+  if (aimSpeeds.length < 30 || !firstShots.length) return { ready: false };
+
+  const aimSpeed = pct(aimSpeeds, 0.75);
+  const flickPeak = median(firstShots.map(s => s.peakSpeedInS));
+  const over = median(firstShots.map(s => s.overshootDeg));
+  const targets = flat.flatMap(r => r.targets || []);
+  const turns = targets.filter(t => t.band === 'turn');
+  const turnEscape = turns.length ? turns.filter(t => t.outcome === 'escaped').length / turns.length : 0;
+  const closeHits = flat.flatMap(r => r.shots).filter(s => (s.band === 'peek' || s.band === 'strafe') && s.hit);
+  const closeHead = closeHits.length ? closeHits.filter(s => s.result === 'head').length / closeHits.length : null;
+  const cm = cm360(cfg.sens, cfg.dpi);
+
+  const reasons = [];
+  const start = clamp(Math.round(aimSpeed * 1.2), 2, 40);
+  const end = Math.max(start + 8, Math.round(flickPeak * 0.9));
+  reasons.push(`In the last moment before clicking, your hand was usually under ${fmt(aimSpeed, 1)} in/s, so the ramp starts at ${start} and your final aim stays steady.`);
+  reasons.push(`Your flicks and turns peaked around ${fmt(flickPeak, 0)} in/s, so the ramp ends at ${end}.`);
+
+  let ratio = 1.25;
+  if (over < -0.5) { ratio += 0.15; reasons.push(`You stop short of targets (${fmt(over, 2)}° on first shots), so the top goes up.`); }
+  else if (over > 0.5) { ratio -= 0.1; reasons.push(`You flick past targets (+${fmt(over, 2)}° on first shots), so the top comes down.`); }
+  else reasons.push(`Your flick distance is on target (${over > 0 ? '+' : ''}${fmt(over, 2)}° on first shots), so the top stays moderate.`);
+  if (turnEscape >= 0.25) { ratio += 0.15; reasons.push(`${fmt(turnEscape * 100, 0)}% of enemies behind you got away, so big turns get more help.`); }
+  if (cm >= 60) { ratio += 0.15; reasons.push(`At ${fmt(cm, 0)} cm/360 big turns take a lot of arm, so the top goes up.`); }
+  if (cm < 20) { ratio = Math.min(ratio, 1.1); reasons.push(`At ${fmt(cm, 1)} cm/360 your base sens is already very fast, so the curve adds very little. Check your DPI and sens are right.`); }
+  ratio = clamp(ratio, 1.05, 1.8);
+
+  const slowDown = closeHead !== null && closeHits.length >= 5 && closeHead < 0.25;
+  if (slowDown) reasons.push(`Only ${fmt(closeHead * 100, 0)}% of your hits on peeks and strafes were headshots, so your slow aim drops by 10%.`);
+
+  const curves = runs.filter(r => r.schema === 2 && r.kind === 'curve' && r.dpi === cfg.dpi).slice(-5);
+  const meanOf = (list, f) => list.reduce((a, r) => a + f(r), 0) / list.length;
+  const compare = curves.length ? {
+    flatMs: meanOf(flat, r => r.summary.medianMs), curveMs: meanOf(curves, r => r.summary.medianMs),
+    flatHs: meanOf(flat, r => r.summary.headshotRate), curveHs: meanOf(curves, r => r.summary.headshotRate),
+    flatN: flat.length, curveN: curves.length,
+  } : null;
+
+  return {
+    ready: true, runs: flat.length, reasons, compare,
+    curve: { mode: 'linear', slow: cfg.sens * (slowDown ? 0.9 : 1), fast: cfg.sens * ratio, start: Math.max(start, 0.5), end },
+  };
+}
+/* ---------- Hand matching: find repeatable differences between directions, leave the rest raw ---------- */
+const handKey = c => JSON.stringify([c.dpi, c.mode, c.slow, c.fast, c.start, c.end, c.exp, c.lr, c.ud, c.rot].map(v => typeof v === 'number' ? +v.toFixed(4) : v));
+
+// For each first shot: where the opening flick stopped, before any corrections.
+function flickFacts(run, move) {
+  if (!move) return [];
+  const rows = move.samples, seen = new Set(), facts = [];
+  for (const s of run.shots) {
+    if (seen.has(s.target)) continue;
+    seen.add(s.target);
+    if (!['right', 'left', 'up', 'down'].includes(s.band)) continue;
+    const spawn = s.tMs - s.timeMs;
+    let startRow = null, aimRow = null;
+    const after = [];
+    for (const row of rows) {
+      if (row[0] <= spawn) startRow = row;
+      if (row[0] <= s.tMs) aimRow = row;
+      if (row[0] > spawn && row[0] <= s.tMs) after.push(row);
+    }
+    if (!aimRow || after.length < 3) continue;
+    const y0 = startRow ? startRow[6] : 0, p0 = startRow ? startRow[7] : 0;
+    const targetYaw = aimRow[6] - s.errorYawDeg, targetPitch = aimRow[7] - s.errorPitchDeg;
+    let peak = 0, peakAt = 0;
+    after.forEach((row, i) => { if (row[4] > peak) { peak = row[4]; peakAt = i; } });
+    if (peak < 3) continue; // no real flick here
+    // The flick has stopped once speed stays low, not on a single slow reading.
+    const slow = row => row[4] < peak * 0.25;
+    const tail = after.slice(peakAt + 1);
+    const land = tail.find((row, i) => slow(row) && (i === tail.length - 1 || slow(tail[i + 1]))) || after[after.length - 1];
+    const lx = wrap180(targetYaw - y0), ly = targetPitch - p0, dist = Math.hypot(lx, ly);
+    if (dist < 5) continue;
+    const hx = wrap180(land[6] - y0), hy = land[7] - p0;
+    const reach = (hx * lx + hy * ly) / (dist * dist);
+    if (reach < 0.3 || reach > 1.7) continue;
+    // Clockwise drift as seen on screen. Pitch is flipped because screen y points down.
+    const angle = deg(Math.atan2(lx * -hy - -ly * hx, lx * hx + ly * hy));
+    facts.push({ dir: s.band, reach, angle, peak, dist });
+  }
+  return facts;
+}
+function statOf(list) {
+  const n = list.length;
+  if (!n) return { n: 0, mean: 0, se: Infinity };
+  const mean = list.reduce((a, b) => a + b, 0) / n;
+  const sd = n > 1 ? Math.sqrt(list.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) : Infinity;
+  return { n, mean, se: sd / Math.sqrt(n) };
+}
+const realGap = (a, b, gap) => Math.abs(a.mean - b.mean) >= gap && Math.abs(a.mean - b.mean) >= 2 * Math.hypot(a.se, b.se);
+
+function adaptHand(runs, moves, cfg) {
+  const key = handKey(cfg);
+  const use = runs.filter(r => r.kind === 'hand' && r.configKey === key).slice(-3);
+  if (!use.length) return { ready: false };
+  const moveOf = new Map(moves.map(m => [m.runId, m]));
+  const facts = use.flatMap(r => flickFacts(r, moveOf.get(r.id)));
+  const reachOf = dir => statOf(facts.filter(f => f.dir === dir).map(f => f.reach));
+  const dirs = { right: reachOf('right'), left: reachOf('left'), up: reachOf('up'), down: reachOf('down') };
+  const pc = s => `${fmt(s.mean * 100, 0)}%`;
+  const DAMP = 0.7; // correct most of the gap per round, so one odd run can't swing your aim
+  const changes = {}, reasons = [];
+
+  const { right, left, up, down } = dirs;
+  if (right.n < 8 || left.n < 8) reasons.push(`Not enough left and right flicks yet (${left.n} left, ${right.n} right, need 8 each).`);
+  else if (realGap(right, left, 0.03)) {
+    changes.lr = clamp(cfg.lr * Math.pow(right.mean / left.mean, DAMP), 0.75, 1.3);
+    reasons.push(`Left flicks land at ${pc(left)} and right at ${pc(right)}, so left goes to ×${fmt(changes.lr, 3)}. Right stays untouched.`);
+  } else reasons.push(`Left and right land about the same (${pc(left)} and ${pc(right)}), so left stays as it is.`);
+
+  if (up.n < 5 || down.n < 5) reasons.push(`Not enough up and down flicks yet (${up.n} up, ${down.n} down, need 5 each).`);
+  else if (realGap(down, up, 0.05)) {
+    changes.ud = clamp(cfg.ud * Math.pow(down.mean / up.mean, DAMP), 0.75, 1.3);
+    reasons.push(`Up flicks land at ${pc(up)} and down at ${pc(down)}, so up goes to ×${fmt(changes.ud, 3)}. Down stays untouched.`);
+  } else reasons.push(`Up and down land about the same (${pc(up)} and ${pc(down)}), so vertical stays as it is.`);
+
+  const angle = statOf(facts.map(f => f.angle));
+  if (angle.n >= 12 && Math.abs(angle.mean) >= 0.75 && Math.abs(angle.mean) >= 2 * angle.se) {
+    changes.rot = clamp(cfg.rot - angle.mean * DAMP, -15, 15);
+    const tilt = angle.mean > 0 ? 'down when you flick right and up when you flick left' : 'up when you flick right and down when you flick left';
+    reasons.push(`Your grip angle pulls flicks ${fmt(Math.abs(angle.mean), 1)}° off line: ${tilt}. Rotation goes to ${fmt(changes.rot, 2)}°.`);
+  } else if (angle.n >= 12) reasons.push(`Your flicks go straight (${fmt(angle.mean, 1)}° off line), so rotation stays as it is.`);
+
+  // Split by enemy distance, not hand speed: a flick that randomly went long is also faster,
+  // so sorting by speed would make every hand look like it overshoots at high speed.
+  const flat = facts.filter(f => f.dir === 'right' || f.dir === 'left').sort((a, b) => a.dist - b.dist);
+  const half = Math.floor(flat.length / 2);
+  const slowR = statOf(flat.slice(0, half).map(f => f.reach)), fastR = statOf(flat.slice(half).map(f => f.reach));
+  if (slowR.n >= 6 && fastR.n >= 6) {
+    if (realGap(slowR, fastR, 0.04)) {
+      changes.fast = clamp(cfg.fast * Math.pow(slowR.mean / fastR.mean, DAMP), cfg.slow * 1.02, cfg.slow * 2.2);
+      reasons.push(`Big flicks land at ${pc(fastR)} and small ones at ${pc(slowR)}, so top sens goes to ${fmt(changes.fast)}. Slow aim stays untouched.`);
+    } else reasons.push(`Big and small flicks land about the same (${pc(fastR)} and ${pc(slowR)}), so the curve shape stays as it is.`);
+  }
+  // One run can look lopsided by luck, so nothing changes until a second run backs it up.
+  if (use.length < 2) {
+    if (Object.keys(changes).length) reasons.unshift('This is from one run, which can be luck. Run one more hand check to confirm before anything changes.');
+    return { ready: true, runs: use.length, dirs, angle, changes: {}, reasons };
+  }
+  return { ready: true, runs: use.length, dirs, angle, changes, reasons };
+}
+let lastHand = null;
+function renderHand() {
+  const a = lastHand = adaptHand(saved.runs, saved.moves, st);
+  const fixed = st.lr !== 1 || st.ud !== 1 || st.rot !== 0;
+  $('handNow').textContent = fixed
+    ? `Active fixes: left ×${fmt(st.lr, 3)}, up ×${fmt(st.ud, 3)}, rotation ${fmt(st.rot, 2)}°. They're in your export.`
+    : 'No hand fixes active. Your aim is raw.';
+  $('handReset').hidden = !fixed;
+  $('handBody').hidden = !a.ready;
+  $('handEmpty').hidden = a.ready;
+  if (!a.ready) {
+    $('handEmpty').textContent = saved.runs.some(r => r.kind === 'hand')
+      ? 'Your setup changed, so older checks no longer apply. Run a hand check on this setup.'
+      : 'Run a hand check to see how each direction lands.';
+    return;
+  }
+  const name = { right: 'Right', left: 'Left', up: 'Up', down: 'Down' };
+  $('handRows').innerHTML = Object.entries(a.dirs).map(([d, s]) => `<tr><td>${name[d]}</td><td>${s.n}</td><td>${s.n ? fmt(s.mean * 100, 0) + '%' : 'n/a'}</td></tr>`).join('');
+  $('handReasons').innerHTML = a.reasons.map(t => `<li>${t}</li>`).join('');
+  $('handApply').hidden = !Object.keys(a.changes).length;
+}
+$('runHand').addEventListener('click', () => openTest('hand'));
+$('handApply').addEventListener('click', () => {
+  if (!lastHand || !lastHand.ready) return;
+  Object.assign(st, lastHand.changes, { preset: null });
+  render();
+});
+$('handReset').addEventListener('click', () => { Object.assign(st, { lr: 1, ud: 1, rot: 0 }); render(); });
+
+let saved = { runs: [], moves: [] };
+let lastRec = null;
+function renderRec() {
+  renderHand();
+  const rec = lastRec = recommend(saved.runs, saved.moves, st);
+  $('recEmpty').hidden = rec.ready;
+  $('recBody').hidden = !rec.ready;
+  if (!rec.ready) return;
+  const c = rec.curve;
+  $('recHead').textContent = `Based on your last ${rec.runs === 1 ? 'test' : rec.runs + ' tests'}: sens ${fmt(c.slow)} when you aim slowly, rising to ${fmt(c.fast)} on fast swings.`;
+  $('recReasons').innerHTML = rec.reasons.map(t => `<li>${t}</li>`).join('');
+  const k = rec.compare;
+  $('recCompare').textContent = k
+    ? `Normal sens (${k.flatN === 1 ? '1 test' : k.flatN + ' tests'}): ${fmt(k.flatMs, 0)} ms, ${fmt(k.flatHs * 100, 0)}% headshots. Your curve (${k.curveN === 1 ? '1 test' : k.curveN + ' tests'}): ${fmt(k.curveMs, 0)} ms, ${fmt(k.curveHs * 100, 0)}% headshots.`
+    : 'Try your curve in the test too, and this compares it against your normal sens.';
+}
+$('recApply').addEventListener('click', () => {
+  if (!lastRec || !lastRec.ready) return;
+  changeCurve(() => Object.assign(st, lastRec.curve, { preset: null }));
+});
+
+/* ---------- Saved runs (IndexedDB: raw movement is too big for localStorage) ---------- */
+const SAMPLE_COLUMNS = ['tMs', 'dx', 'dy', 'dtMs', 'speedInS', 'multiplier', 'yawDeg', 'pitchDeg', 'targetIndex'];
+let dbOpen = null;
+function db() {
+  return dbOpen || (dbOpen = new Promise((resolve, reject) => {
+    const q = indexedDB.open('curve-bench', 1);
+    q.onupgradeneeded = () => {
+      q.result.createObjectStore('runs', { keyPath: 'id' });
+      q.result.createObjectStore('movement', { keyPath: 'runId' });
+    };
+    q.onsuccess = () => resolve(q.result);
+    q.onerror = () => reject(q.error);
+  }));
+}
+async function saveRun(run, movement) {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const t = d.transaction(['runs', 'movement'], 'readwrite');
+    t.objectStore('runs').put(run);
+    t.objectStore('movement').put(movement);
+    t.oncomplete = resolve;
+    t.onerror = t.onabort = () => reject(t.error);
+  });
+}
+async function getAll(store) {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const q = d.transaction(store).objectStore(store).getAll();
+    q.onsuccess = () => resolve(q.result);
+    q.onerror = () => reject(q.error);
+  });
+}
+async function clearAll() {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const t = d.transaction(['runs', 'movement'], 'readwrite');
+    t.objectStore('runs').clear();
+    t.objectStore('movement').clear();
+    t.oncomplete = resolve;
+    t.onerror = t.onabort = () => reject(t.error);
+  });
+}
+function storageFailed() {
+  $('history').hidden = true;
+  $('historyNote').hidden = false;
+  $('historyNote').textContent = 'This browser blocked saving, so runs are not being stored. Private windows often do this.';
+}
+async function refreshHistory() {
+  const [allRuns, allMoves] = await Promise.all([getAll('runs'), getAll('movement')]);
+  const runs = allRuns.filter(validRun), moves = allMoves.filter(validMove);
+  saved = { runs, moves };
+  renderRec();
+  $('history').hidden = !runs.length;
+  $('historyNote').hidden = !!runs.length;
+  if (!runs.length) $('historyNote').textContent = 'No saved tests yet. Finish a test and it shows up here.';
+  const signed = v => (v > 0 ? '+' : '') + fmt(v, 2) + '°';
+  $('historyRows').innerHTML = runs.slice(-10).reverse().map(r => {
+    const when = new Date(r.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const s = r.summary;
+    const hs = s.headshotRate == null ? 'n/a' : fmt(s.headshotRate * 100, 0) + '%';
+    return `<tr><td>${when}</td><td>${RUN_LABEL[r.kind]}</td><td>${fmt(s.medianMs, 0)} ms</td><td>${fmt(s.accuracy * 100, 0)}%</td><td>${hs}</td><td>${fmt(s.avgErrorDeg, 2)}°</td><td>${signed(s.avgOvershootDeg)}</td></tr>`;
+  }).join('');
+}
+function csvCell(v) {
+  if (typeof v !== 'string') return v;
+  const safe = /^[=+\-@\t\r]/.test(v) ? "'" + v : v;
+  return /[",\n]/.test(safe) ? '"' + safe.replace(/"/g, '""') + '"' : safe;
+}
+function shotsCSV(runs) {
+  const head = ['runId', 'date', 'runType', 'dpi', 'sens', 'curveMode', 'slowSens', 'topSens', 'rampStart', 'rampEnd',
+    'shot', 'target', 'scenario', 'result', 'timeMs', 'distanceM', 'elevated', 'targetDistDeg', 'errorDeg', 'errorYawDeg', 'errorPitchDeg', 'overshootDeg', 'sideErrorDeg', 'peakSpeedInS', 'pathDeg'];
+  const rows = runs.flatMap(r => r.shots.map(s => {
+    const c = r.curve || {};
+    return [r.id, r.date, r.kind, r.dpi, +r.sens.toFixed(4), c.mode || '', c.slow || '', c.fast || '', c.start ?? '', c.end || '',
+      s.shot, s.target, s.band, s.result ?? (s.hit ? 'hit' : 'miss'), s.timeMs, s.distanceM ?? '', s.elevated ?? '', s.targetDistDeg, s.errorDeg, s.errorYawDeg, s.errorPitchDeg, s.overshootDeg, s.sideErrorDeg, s.peakSpeedInS, s.pathDeg].map(csvCell).join(',');
+  }));
+  return [head.join(','), ...rows].join('\n');
+}
+$('dlCsv').addEventListener('click', async () => saveFile('sensline-shots.csv', shotsCSV((await getAll('runs')).filter(validRun)), 'text/csv'));
+$('dlJson').addEventListener('click', async () => {
+  const [runs, movement] = await Promise.all([getAll('runs'), getAll('movement')]);
+  saveFile('sensline-data.json', JSON.stringify({ runs: runs.filter(validRun), movement: movement.filter(validMove) }), 'application/json');
+});
+$('clearRuns').addEventListener('click', async () => {
+  if (!confirm('Delete every saved run and its movement data? This can\'t be undone. Download first if you want a copy.')) return;
+  await clearAll();
+  refreshHistory();
+});
+
+async function beginTest() {
+  const cv = $('testCanvas');
+  T.raw = true;
+  if (st.sound) {
+    audio = audio || new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
+    audio.resume();
+  }
+  try {
+    await cv.requestPointerLock({ unadjustedMovement: true });
+  } catch (e) {
+    T.raw = false;
+    try { await cv.requestPointerLock(); }
+    catch (e2) {
+      $('testErr').textContent = 'The browser refused to lock the mouse. Click Start again, or open this file in Chrome or Edge.';
+      return;
+    }
+  }
+  document.documentElement.requestFullscreen && $('test').requestFullscreen().catch(() => {});
+  Object.assign(T, { running: true, yaw: 0, pitch: 0, i: 0, hits: 0, heads: 0, misses: 0, escaped: 0, times: [], peaks: [], shots: [], samples: [], outcomes: [], flash: null, hitMark: null, hitAt: 0, ghost: null, sparks: [], hist: new Array(HBINS).fill(0), targets: T.kind === 'hand' ? handLayout() : layout(), last: performance.now(), t0: performance.now() });
+  markSpawn();
+  $('testStart').hidden = true;
+  requestAnimationFrame(frame);
+}
+const ARENA = {
+  light: {
+    sky1: '#7fa8c4', sky2: '#d9e6ec', floor1: '#b7b2a6', floor2: '#85817a', lines: 'rgba(255, 255, 255, 0.28)',
+    wall1: '#ece8df', wall2: '#e2ded3', wallBase: '#a9a497', wallCap: '#f7f5ef', marker: '#b9b4a6',
+    block: '#c9c4b6', blockBase: '#8d897d', blockTop: '#efece3', blockSide: '#a39e90', suit: '#2a2e35', chest: '#3a3f49',
+  },
+  dark: {
+    sky1: '#0c1320', sky2: '#2b3c52', floor1: '#2d3239', floor2: '#1b1f24', lines: 'rgba(255, 255, 255, 0.13)',
+    wall1: '#3b434d', wall2: '#333a44', wallBase: '#20252b', wallCap: '#5a6470', marker: '#66717e',
+    block: '#505863', blockBase: '#2c3138', blockTop: '#727b87', blockSide: '#3a4149', suit: '#646c78', chest: '#78818e',
+  },
+};
+function frame() {
+  if (!T || !T.running) return;
+  const cv = $('testCanvas'), W = cv.clientWidth, H = cv.clientHeight, dpr = devicePixelRatio || 1;
+  if (cv.width !== W * dpr || cv.height !== H * dpr) { cv.width = W * dpr; cv.height = H * dpr; }
+  const g = cv.getContext('2d'), A = ARENA[T.theme];
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const f = (W / 2) / Math.tan(rad(FOV / 2)), cx = W / 2, cy = H / 2;
+  const proj = c => ({ x: cx + f * c.x / c.z, y: cy - f * c.y / c.z });
+  const now = performance.now();
+  const tgt = T.targets[T.i], ms = now - T.spawn;
+  if (ms > tgt.limit) {
+    T.flash = { text: 'Got away', until: now + 500 };
+    endTarget('escaped', tgt.limit);
+    if (T && T.running) requestAnimationFrame(frame);
+    return;
+  }
+
+  /* ---- arena: sky, then floor split at the true horizon ---- */
+  const horizon = cy + f * Math.tan(rad(T.pitch));
+  const sky = g.createLinearGradient(0, horizon - H, 0, horizon);
+  sky.addColorStop(0, A.sky1); sky.addColorStop(1, A.sky2);
+  g.fillStyle = sky; g.fillRect(0, 0, W, H);
+  const floor = g.createLinearGradient(0, horizon, 0, horizon + H * 0.7);
+  floor.addColorStop(0, A.floor1); floor.addColorStop(1, A.floor2);
+  g.fillStyle = floor; g.fillRect(0, horizon, W, Math.max(0, H - horizon));
+
+  const P = (t, L, h) => worldPoint(t, L, h, T.yaw, T.pitch);
+  const quad = (pts, fill) => {
+    if (pts.some(q => q.z < 0.05)) return;
+    g.fillStyle = fill;
+    g.beginPath();
+    pts.map(proj).forEach((q, i) => (i ? g.lineTo(q.x, q.y) : g.moveTo(q.x, q.y)));
+    g.closePath(); g.fill();
+  };
+  const polyline = pts => {
+    let pen = false;
+    g.beginPath();
+    for (const c of pts) {
+      if (c.z < 0.05) { pen = false; continue; }
+      const q = proj(c);
+      if (pen) g.lineTo(q.x, q.y); else g.moveTo(q.x, q.y);
+      pen = true;
+    }
+    g.stroke();
+  };
+
+  // floor markings: rings and spokes, so distance and turning are easy to read
+  g.strokeStyle = A.lines; g.lineWidth = 1;
+  const yawFrom = T.yaw - 80, yawTo = T.yaw + 80;
+  for (const r of [8, 14, 20, 26, 32]) {
+    const ring = [];
+    for (let y = yawFrom; y <= yawTo; y += 5) ring.push(P({ yaw: y, dist: r }, 0, -EYE_H));
+    polyline(ring);
+  }
+  for (let y = Math.ceil(yawFrom / 15) * 15; y <= yawTo; y += 15) {
+    polyline([1, 2, 3, 8, 14, 20, 26, 34].map(r => P({ yaw: y, dist: r }, 0, -EYE_H)));
+  }
+
+  // round arena wall, in panels
+  const WALL = 34, panels = 15;
+  for (let y = Math.floor(yawFrom / panels) * panels; y < yawTo; y += panels) {
+    const a = { yaw: y, dist: WALL }, b = { yaw: y + panels, dist: WALL };
+    const span = (h1, h2, fill) => quad([P(a, 0, h1), P(b, 0, h1), P(b, 0, h2), P(a, 0, h2)], fill);
+    const even = ((Math.round(y / panels) % 2) + 2) % 2 === 0;
+    span(-EYE_H, 11, even ? A.wall1 : A.wall2);
+    span(-EYE_H, -0.7, A.wallBase);
+    span(9.8, 11, A.wallCap);
+  }
+  // numbered wall markers, so you always know which way you face
+  g.textAlign = 'center';
+  g.font = `600 ${Math.round(H * 0.05)}px Bahnschrift, "Segoe UI", sans-serif`;
+  g.fillStyle = A.marker;
+  for (let n = Math.floor(yawFrom / 90); n <= yawTo / 90; n++) {
+    const c = P({ yaw: n * 90, dist: WALL }, 0, 5);
+    if (c.z > 0.05) { const q = proj(c); g.fillText(String(((n % 4) + 4) % 4 + 1), q.x, q.y); }
+  }
+  g.textAlign = 'left';
+
+  /* ---- props and enemies ---- */
+  const block = (t, l1, l2, h1, h2) => {
+    const s = (a, b, fill) => quad([P(t, l1, a), P(t, l2, a), P(t, l2, b), P(t, l1, b)], fill);
+    s(h1, h2, A.block);
+    s(h1, h1 + 0.18, A.blockBase);            // grime at the base
+    s(h2 - 0.14, h2, A.blockTop);            // lit top edge
+  };
+  const cover = t => {
+    if (t.band !== 'peek') return;
+    const near = { yaw: t.yaw, dist: t.dist - 0.5 }, s = t.peekSide;
+    block(near, Math.min(0, -s * 6), Math.max(0, -s * 6), -EYE_H, 1.5);
+    quad([P(near, -s * 0.14, -EYE_H), P(near, 0, -EYE_H), P(near, 0, 1.5), P(near, -s * 0.14, 1.5)], A.blockSide); // shaded corner
+  };
+
+  const drawEnemy = (t, tMs, alpha, flash) => {
+    const c = headCam(t, tMs, T.yaw, T.pitch);
+    if (c.z <= 0.05) return;
+    const p = proj(c);
+    if (p.x < -80 || p.x > W + 80 || p.y < -120 || p.y > H + 200) return;
+    const m = f / (t.dist * c.z); // pixels per meter at this enemy
+    const moving = Math.abs(lateral(t, tMs + 20) - lateral(t, tMs)) > 0.001;
+    const stride = moving ? Math.sin(tMs / 62) * 0.15 : 0;
+    const dir = moving ? Math.sign(lateral(t, tMs + 20) - lateral(t, tMs)) : 0;
+
+    g.save();
+    g.globalAlpha = alpha;
+    g.lineCap = 'round'; g.lineJoin = 'round';
+
+    // ground shadow
+    g.fillStyle = 'rgba(30, 28, 22, 0.28)';
+    g.beginPath(); g.ellipse(p.x, p.y + BODY_H * m, 0.42 * m, 0.09 * m, 0, 0, 7); g.fill();
+
+    const seg = (x1, y1, x2, y2, w, color, grow) => {
+      g.strokeStyle = color; g.lineWidth = (w + grow) * m;
+      g.beginPath(); g.moveTo(p.x + x1 * m, p.y + y1 * m); g.lineTo(p.x + x2 * m, p.y + y2 * m); g.stroke();
+    };
+    const lean = dir * 0.03;
+    const parts = grow => color => {
+      seg(-0.09, 0.9, -0.1 + stride, BODY_H - 0.08, 0.17, color, grow);     // legs
+      seg(0.09, 0.9, 0.1 - stride, BODY_H - 0.08, 0.17, color, grow);
+      seg(-0.21 + lean, 0.3, -0.22 - stride * 0.5, 0.74, 0.1, color, grow); // arms
+      seg(0.21 + lean, 0.3, 0.22 + stride * 0.5, 0.74, 0.1, color, grow);
+      seg(lean, 0.34, 0, 0.82, 0.38, color, grow);                          // torso
+      seg(lean * 2, 0.08, lean, 0.26, 0.11, color, grow);                   // neck
+    };
+    const rim = Math.max(0.03, 2 / m);
+    parts(rim * 2)('#d8261c');                 // one continuous red outline
+    const suit = flash ? '#f7f5ef' : A.suit;
+    parts(0)(suit);
+    if (!flash) seg(lean, 0.3, 0, 0.56, 0.2, A.chest, 0); // chest plate, for some form
+
+    g.fillStyle = '#d8261c';
+    g.beginPath(); g.arc(p.x, p.y, Math.max(2, (HEAD_R + rim) * m), 0, 7); g.fill();
+    g.fillStyle = flash ? '#ffffff' : '#ffd9c7';
+    g.beginPath(); g.arc(p.x, p.y, Math.max(1.5, HEAD_R * m), 0, 7); g.fill();
+    g.restore();
+  };
+
+  const ghost = T.ghost && now - T.ghost.from < 240 ? T.ghost : null;
+  if (ghost) {
+    if (ghost.t.elev > 0) block(ghost.t, -1.6, 1.6, -EYE_H, ghost.t.elev - BODY_H);
+    drawEnemy(ghost.t, ghost.ms, 1 - (now - ghost.from) / 240, true);
+    cover(ghost.t);
+  }
+  if (tgt.elev > 0 && !(ghost && ghost.t === tgt)) block(tgt, -1.6, 1.6, -EYE_H, tgt.elev - BODY_H);
+  if (ms >= 0) drawEnemy(tgt, ms, 1, now - T.hitAt < 90);
+  cover(tgt); // drawn even before a peek, so you can hold the angle
+
+  /* ---- arrow, effects, crosshair ---- */
+  if (ms >= 0) {
+    const c = headCam(tgt, ms, T.yaw, T.pitch);
+    const p = c.z > 0.05 ? proj(c) : null;
+    if (!p || p.x < 0 || p.x > W || p.y < 0 || p.y > H) {
+      const ang = Math.atan2(-c.y, c.x);
+      g.save(); g.translate(cx + Math.cos(ang) * 120, cy + Math.sin(ang) * 120); g.rotate(ang);
+      g.fillStyle = '#ffffff'; g.strokeStyle = '#1b1e23'; g.lineWidth = 2; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(20, 0); g.lineTo(-10, -13); g.lineTo(-4, 0); g.lineTo(-10, 13); g.closePath();
+      g.fill(); g.stroke();
+      g.restore();
+    }
+  }
+
+  T.sparks = T.sparks.filter(s => now - s.from < s.life);
+  for (const s of T.sparks) {
+    const age = (now - s.from) / 1000, left = 1 - (now - s.from) / s.life;
+    g.globalAlpha = left;
+    g.fillStyle = s.size > 2.5 ? '#ffffff' : '#ff5a36';
+    g.beginPath(); g.arc(cx + s.vx * age, cy + s.vy * age + 260 * age * age, s.size, 0, 7); g.fill();
+  }
+  g.globalAlpha = 1;
+
+  if (T.hitMark && now < T.hitMark.until) {
+    g.strokeStyle = T.hitMark.strong ? '#e3241a' : '#ffffff'; g.lineWidth = 2.5; g.lineCap = 'round';
+    for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+      g.beginPath(); g.moveTo(cx + sx * 7, cy + sy * 7); g.lineTo(cx + sx * 15, cy + sy * 15); g.stroke();
+    }
+  }
+
+  const bar = (x, y, w, h, color) => { g.fillStyle = color; g.fillRect(x, y, w, h); };
+  for (const [x, y, w, h] of [[-10, -1, 6, 2], [4, -1, 6, 2], [-1, -10, 2, 6], [-1, 4, 2, 6]]) {
+    bar(cx + x - 1, cy + y - 1, w + 2, h + 2, '#14171b');
+  }
+  for (const [x, y, w, h] of [[-10, -1, 6, 2], [4, -1, 6, 2], [-1, -10, 2, 6], [-1, 4, 2, 6]]) {
+    bar(cx + x, cy + y, w, h, '#2bf0a2');
+  }
+
+  const label = (text, x, y, size, align = 'left') => {
+    g.font = `600 ${size}px Bahnschrift, "Segoe UI", sans-serif`;
+    g.textAlign = align;
+    g.lineWidth = 4; g.lineJoin = 'round'; g.strokeStyle = 'rgba(16, 20, 25, 0.75)';
+    g.strokeText(text, x, y);
+    g.fillStyle = '#ffffff';
+    g.fillText(text, x, y);
+    g.textAlign = 'left';
+  };
+  if (T.flash && now < T.flash.until) label(T.flash.text, cx, cy + 58, 21, 'center');
+
+  /* ---- progress along the top ---- */
+  const trackW = Math.min(320, W * 0.4), trackX = cx - trackW / 2, done = T.i / T.targets.length;
+  g.fillStyle = 'rgba(16, 20, 25, 0.62)';
+  g.beginPath();
+  if (g.roundRect) g.roundRect(trackX - 16, 14, trackW + 32, 46, 8); else g.rect(trackX - 16, 14, trackW + 32, 46);
+  g.fill();
+  bar(trackX, 46, trackW, 5, 'rgba(255, 255, 255, 0.25)');
+  bar(trackX, 46, trackW * done, 5, '#2bf0a2');
+  g.font = '600 14.5px Bahnschrift, "Segoe UI", sans-serif';
+  g.fillStyle = '#ffffff';
+  g.fillText(`Enemy ${T.i + 1} of ${T.targets.length}`, trackX, 37);
+  g.textAlign = 'right';
+  g.fillText(`Headshots ${T.heads}`, trackX + trackW, 37);
+  g.textAlign = 'left';
+  label('Esc to quit', 18, H - 18, 13.5);
+  if (!T.raw) label('Raw mouse input unavailable, so Windows pointer settings may affect this run', 18, H - 40, 13.5);
+  requestAnimationFrame(frame);
+}
+$('runFlat').addEventListener('click', () => openTest('flat'));
+$('runCurve').addEventListener('click', () => openTest('curve'));
+$('testCancel').addEventListener('click', closeTest);
+$('testGo').addEventListener('click', beginTest);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && T && !T.running) closeTest(); });
+document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && T && T.running) closeTest(); });
+$('testCanvas').addEventListener('pointermove', e => onMove(e.movementX, e.movementY, e.timeStamp));
+$('testCanvas').addEventListener('pointerdown', e => { if (e.button === 0) onShot(); });
+
+const currentTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
+function paintTheme() {
+  $('themeToggle').textContent = currentTheme() === 'dark' ? 'Light theme' : 'Dark theme';
+  drawChart();
+}
+$('themeToggle').addEventListener('click', () => {
+  const next = currentTheme() === 'dark' ? 'light' : 'dark';
+  const apply = () => {
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('curve-bench-theme', next); } catch (e) { /* the choice just won't be remembered */ }
+    paintTheme();
+  };
+  if (document.startViewTransition && !calm()) document.startViewTransition(apply); else apply();
+});
+// Follow the system setting until someone picks a theme themselves.
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  let saved = null;
+  try { saved = localStorage.getItem('curve-bench-theme'); } catch (err) { /* treat as no choice */ }
+  if (saved) return;
+  document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+  paintTheme();
+});
+
+// Test hook, only when served from this machine's own dev server.
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.sensline = { buildCurve, panelArgs, settingsJSON, appValues, synchronousGain, naturalGain, cm360, get state() { return st; }, get test() { return T; }, onMove, onShot, openTest, render, layout, handLayout, adaptHand, flickFacts, lateral, hitTest, headCam, recommend, playPop, playTick, getAll, shotsCSV };
+// Scroll choreography: each step rises in once, the graph draws itself once, the nav follows along.
+function setupMotion() {
+  const steps = [...document.querySelectorAll('section.step')];
+  if (calm()) steps.forEach(s => s.classList.add('in'));
+  else {
+    steps.forEach(s => s.classList.add('rv'));
+    const seen = new IntersectionObserver(list => list.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('in'); seen.unobserve(e.target); }
+    }), { rootMargin: '0px 0px -8% 0px' });
+    steps.forEach(s => seen.observe(s));
+    chartDraw = 0;
+    drawChart();
+    const seenChart = new IntersectionObserver(list => {
+      if (!list.some(e => e.isIntersecting)) return;
+      seenChart.disconnect();
+      tween(850, t => { chartDraw = t; drawChart(); });
+    }, { threshold: 0.3 });
+    seenChart.observe(chartEl);
+    setTimeout(() => tween(1500, t => {
+      const e = easeInOut(t);
+      heroReveal = e;
+      heroSpeed = Math.max(0.5, e * HERO.xMax);
+      drawHero();
+    }), 420);
+  }
+  // Replay a drill diagram when someone hovers it.
+  document.querySelectorAll('.drill li').forEach(li => li.addEventListener('pointerenter', () => {
+    if (calm()) return;
+    li.querySelectorAll('[class*=a-]').forEach(el => el.getAnimations().forEach(a => { a.cancel(); a.play(); }));
+  }));
+  // The nav marks the step in the middle of the screen.
+  const links = [...document.querySelectorAll('.stepnav a')], bar = $('navBar');
+  const mark = i => {
+    links.forEach((a, k) => { if (k === i) a.setAttribute('aria-current', 'step'); else a.removeAttribute('aria-current'); });
+    bar.classList.toggle('on', i >= 0);
+    if (i >= 0) bar.style.setProperty('--i', i);
+  };
+  const order = ['step1', 'step2', 'step3', 'step4'];
+  const spy = new IntersectionObserver(list => list.forEach(e => {
+    if (e.isIntersecting) mark(order.indexOf(e.target.id));
+    else if (e.target.id === 'step1' && e.boundingClientRect.top > 0) mark(-1);
+  }), { rootMargin: '-35% 0px -60% 0px' });
+  order.forEach(id => spy.observe($(id)));
+}
+paintTheme();
+render();
+setupMotion();
+refreshHistory().catch(storageFailed);
+</script>
+</body>
+</html>
