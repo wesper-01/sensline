@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-DniI1l9zXaMAnYPDYhlevZfKYPPox+TCbQV0ey+8fQg='; style-src 'sha256-vs5k97bONobTLSBi1aXF6nr+i05jS75/adJUbpmyeDI='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-f3PjVIi3qyOl02mT+4YupLz6EOn03RnURSnKAtdzGtM='; style-src 'sha256-TivK24GjHcZZmVfG0/eeiHtiZohIGJ+z7F7n33Ir1Es='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="referrer" content="no-referrer">
@@ -270,6 +270,21 @@
   #testStart .row { justify-content: center; margin-top: 20px; }
   #testCancel { background: transparent; color: #fff; border-color: #7d8791; }
   #testErr { color: #ffc4a8; }
+  #testDone { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(12, 15, 19, 0.86); overflow: auto; }
+  #testDone > div { width: min(640px, 100%); animation: rise .35s var(--ease) both; }
+  #testDone h2 { font-size: 32px; margin-bottom: 16px; }
+  #testDone table { color: #e8ecef; }
+  #testDone th { color: #aeb6be; }
+  #testDone th, #testDone td { border-color: #333b44; }
+  #testDone .note { color: #c3cad1; }
+  #testDone #doneAgain { background: transparent; color: #fff; border-color: #7d8791; }
+  .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 0 0 16px; }
+  .tiles div { background: rgba(255, 255, 255, 0.06); border-radius: 8px; padding: 10px 12px; }
+  .tiles dt { font-size: 13px; color: #c3cad1; }
+  .tiles dd { margin: 2px 0 0; font: 600 24px var(--head); font-variant-numeric: tabular-nums; }
+  #measured .tiles div { background: var(--bg); }
+  #measured .tiles dt { color: var(--soft); }
+  @media (max-width: 620px) { .tiles { grid-template-columns: 1fr 1fr; } }
 
   @media (max-width: 680px) {
     .drill { grid-template-columns: 1fr 1fr; }
@@ -366,7 +381,12 @@
       <p class="callout">If RawAccel is running with a curve, set its dropdown to Off and click Apply before you start. Otherwise the test adds the curve twice.</p>
       <div class="row"><button class="primary" id="runFlat">Start the aim test</button></div>
       <label class="check"><input type="checkbox" id="sound"> Play a sound when I hit an enemy</label>
-      <div id="measured" hidden><p class="readout" id="measureRead"></p></div>
+      <div id="measured" hidden>
+        <h3 id="lastHead">Your last test</h3>
+        <p class="readout mt0" id="measureRead"></p>
+        <div class="scroll"><table class="compact mt10"><thead><tr><th>Drill</th><th>Killed</th><th>Headshots</th><th>Time per kill</th><th>First flick landed</th></tr></thead><tbody id="lastRows"></tbody></table></div>
+        <p class="note" id="lastInput"></p>
+      </div>
     </section>
 
     <section class="step" id="step3">
@@ -471,7 +491,7 @@
         <p class="note">You can also drag the two points on the graph.</p>
       </details>
 
-      <details>
+      <details id="handCheck">
         <summary>Fix left and right differences (optional)</summary>
         <p class="note mt0">Some players flick better one way because of their grip. This 36-enemy check measures where each flick lands before you correct it, then fixes only real differences. Right flicks and slow aim stay as they are.</p>
         <div class="row"><button id="runHand">Run hand check</button></div>
@@ -604,6 +624,21 @@
       <button id="testCancel">Cancel</button>
     </div>
     <p class="note" id="testErr"></p>
+  </div></div>
+  <div id="testDone" hidden><div>
+    <h2 id="doneTitle">Test done</h2>
+    <dl class="tiles">
+      <div><dt>Enemies killed</dt><dd id="doneKills"></dd></div>
+      <div><dt>Headshots</dt><dd id="doneHs"></dd></div>
+      <div><dt>Typical time per kill</dt><dd id="doneMs"></dd></div>
+      <div><dt>First flick landed</dt><dd id="doneReach"></dd></div>
+    </dl>
+    <div class="scroll"><table class="compact"><thead><tr><th>Drill</th><th>Killed</th><th>Headshots</th><th>Time</th><th>First flick</th></tr></thead><tbody id="doneRows"></tbody></table></div>
+    <p class="note" id="doneInput"></p>
+    <div class="row">
+      <button class="primary" id="doneNext">See my curve</button>
+      <button id="doneAgain">Play again</button>
+    </div>
   </div></div>
 </div>
 
@@ -1220,10 +1255,6 @@ function render() {
   $('fileOnly').textContent = 'Your left and up hand fixes have no field in the app, so they only work through the downloaded file.';
   $('raVersion').value = st.raVersion;
 
-  if (st.hist) {
-    $('measured').hidden = false;
-    $('measureRead').textContent = `Test done. Half the time your hand moved under ${fmt(histPct(0.5), 0)} in/s, and your flicks peaked around ${fmt(median(st.peaks), 0)} in/s. Your recommended curve is in step 3.`;
-  }
   const res = Object.entries(st.results);
   $('results').hidden = !res.length;
   $('resultRows').innerHTML = res.map(([k, r]) => `<tr><td>${RUN_LABEL[k]}</td><td>${fmt(r.median, 0)} ms</td><td>${fmt(r.accuracy * 100, 0)}%</td><td>${r.headshot == null ? 'n/a' : fmt(r.headshot * 100, 0) + '%'}</td></tr>`).join('');
@@ -1571,6 +1602,13 @@ function handLayout() {
   }
   return list;
 }
+// Scenery only: crates between the farthest enemy (26 m) and the wall (34 m), drawn far to near.
+function crates() {
+  const rand = mulberry(seed ^ 0x2c1b3c6d);
+  const list = [];
+  for (let i = 0; i < 16; i++) list.push({ yaw: rand() * 360, dist: 28 + rand() * 3, w: 1.2 + rand() * 1.4, h: 0.7 + rand() * 0.7, d: 1 + rand() * 0.8 });
+  return list.sort((a, b) => b.dist - a.dist);
+}
 // How far the enemy has moved sideways from its anchor point, in meters.
 function lateral(t, ms) {
   if (t.band === 'strafe') {
@@ -1611,6 +1649,7 @@ function openTest(kind) {
   };
   $('test').classList.add('on');
   $('testStart').hidden = false;
+  $('testDone').hidden = true;
   $('testErr').textContent = '';
   $('testTitle').textContent = kind === 'flat' ? 'Aim test' : kind === 'hand' ? 'Hand check' : 'Try your curve';
   $('testBody').textContent = kind === 'hand'
@@ -1624,11 +1663,44 @@ function closeTest() {
   if (document.pointerLockElement) document.exitPointerLock();
   if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
+// Speed over the last few ms of reports. Browsers deliver reports in bunches with uneven
+// timestamps, so one report's own gap can read 3x too fast or too slow.
+const SPEED_WINDOW = 6;
+function handSpeed(ts, counts) {
+  const q = T.win;
+  q.push({ ts, counts });
+  while (q.length > 2 && ts - q[1].ts >= SPEED_WINDOW) q.shift(); // q[0] is the report just before the window
+  if (q.length === 1) return counts / clamp(ts - T.last, 0.5, 100) * 1000 / st.dpi;
+  let sum = 0;
+  for (let i = 1; i < q.length; i++) sum += q[i].counts;
+  return sum / clamp(ts - q[0].ts, 0.5, 100) * 1000 / st.dpi; // in/s, same as RawAccel with DPI set
+}
+// Where the first flick toward this enemy stopped, before any corrections.
+function trackFlick(speed, ts) {
+  const fl = T.flick, ms = ts - T.spawn;
+  if (!fl || ms < 0 || fl.done) return;
+  if (speed > fl.peak) fl.peak = speed;
+  if (fl.peak < 3) return; // no real flick yet
+  fl.slowRun = speed < fl.peak * 0.25 ? fl.slowRun + 1 : 0;
+  if (fl.slowRun < 2) return; // stopped means it stays slow, not one slow report
+  fl.done = true;
+  const tgt = T.targets[T.i];
+  const ty = tgt.yaw + deg(Math.atan2(lateral(tgt, ms), tgt.dist)), tp = deg(Math.atan2(tgt.elev, tgt.dist));
+  const lx = wrap180(ty - T.fromYaw), ly = tp - T.fromPitch, dist = Math.hypot(lx, ly);
+  if (dist < 5) return; // too close to call it a flick
+  const hx = wrap180(T.yaw - T.fromYaw), hy = T.pitch - T.fromPitch;
+  fl.reach = (hx * lx + hy * ly) / (dist * dist);
+  fl.landMs = ms;
+  fl.lineDeg = dist;
+}
 function onMove(dx, dy, ts) {
   if (!T || !T.running) return;
-  const dt = clamp(ts - T.last, 1, 100);
+  const dt = ts - T.last;
+  const speed = handSpeed(ts, Math.hypot(dx, dy));
   T.last = ts;
-  const speed = Math.hypot(dx, dy) / dt * 1000 / st.dpi; // in/s, same as RawAccel with DPI set
+  if (dt > 0.05 && dt < 50) T.gaps.push(dt);
+  if (T.flick && T.flick.done && T.flick.reach != null && speed > 3 && !T.flick.moving) { T.flick.fixes++; T.flick.moving = true; }
+  if (T.flick && speed < 1) T.flick.moving = false;
   const k = T.curve ? T.curve.s(Math.max(speed, 0.05)) : 1;
   const perCount = VAL_YAW * T.sens * k;
   // Same order as RawAccel: rotate first, then left and up multipliers on the output.
@@ -1639,17 +1711,29 @@ function onMove(dx, dy, ts) {
   T.yaw += ox * perCount;
   T.pitch = clamp(T.pitch - oy * perCount, -85, 85);
   T.path += Math.hypot(ox, oy) * perCount;
-  T.samples.push([Math.round(ts - T.t0), dx, dy, +dt.toFixed(2), +speed.toFixed(2), +k.toFixed(4), +T.yaw.toFixed(3), +T.pitch.toFixed(3), T.i]);
+  T.samples.push([Math.round(ts - T.t0), dx, dy, +clamp(dt, 0, 100).toFixed(2), +speed.toFixed(2), +k.toFixed(4), +T.yaw.toFixed(3), +T.pitch.toFixed(3), T.i]);
   if (speed > 0.2) {
     const bin = Math.min(HBINS - 1, Math.floor(speed / HBIN));
-    T.hist[bin] += dt;
+    T.hist[bin] += clamp(dt, 0, 100);
     T.peak = Math.max(T.peak, speed);
   }
+  trackFlick(speed, ts);
 }
-function onShot() {
+// Coalesced reports carry each mouse report's own movement and time. Some browser builds
+// report them wrong under pointer lock, so they're only used when they add up to the event.
+function onPointer(e) {
+  const list = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+  if (list.length > 1) {
+    let sx = 0, sy = 0;
+    for (const c of list) { sx += c.movementX; sy += c.movementY; }
+    if (sx === e.movementX && sy === e.movementY) { for (const c of list) onMove(c.movementX, c.movementY, c.timeStamp); return; }
+  }
+  onMove(e.movementX, e.movementY, e.timeStamp);
+}
+function onShot(ts) {
   if (!T || !T.running) return;
   const tgt = T.targets[T.i];
-  const now = performance.now(), ms = now - T.spawn;
+  const now = ts || performance.now(), ms = now - T.spawn; // the click's own time, not when the page got to it
   if (ms < 0) return; // nobody on screen yet
   const c = headCam(tgt, ms, T.yaw, T.pitch);
   const error = Math.acos(clamp(c.z, -1, 1));
@@ -1663,7 +1747,10 @@ function onShot() {
   const dist = Math.hypot(lineYaw, linePitch) || 1;
   const ux = lineYaw / dist, uy = linePitch / dist;
 
+  const fl = T.flick, first = !T.shots.length || T.shots[T.shots.length - 1].target !== T.i + 1;
+  const flickInfo = first && fl && fl.reach != null ? { reach: +fl.reach.toFixed(3), landMs: Math.round(fl.landMs), fixes: fl.fixes, lineDeg: +fl.lineDeg.toFixed(1) } : {};
   T.shots.push({
+    ...flickInfo,
     shot: T.shots.length + 1, target: T.i + 1, band: tgt.band, result, hit: result !== 'miss',
     tMs: Math.round(now - T.t0), timeMs: Math.round(ms),
     distanceM: +tgt.dist.toFixed(1), elevated: tgt.elev > 0,
@@ -1704,24 +1791,36 @@ function addBurst(now, count) {
   }
 }
 function endTarget(outcome, ms) {
-  T.outcomes.push({ target: T.i + 1, band: T.targets[T.i].band, outcome, timeMs: Math.round(ms) });
+  const fl = T.flick;
+  T.outcomes.push({
+    target: T.i + 1, band: T.targets[T.i].band, outcome, timeMs: Math.round(ms),
+    ...(fl && fl.reach != null ? { reach: +fl.reach.toFixed(3), fixes: fl.fixes } : {}),
+  });
   if (outcome === 'escaped') T.escaped++;
   T.i++;
   if (T.i >= T.targets.length) { finishTest(); return; }
   markSpawn();
 }
 function markSpawn() {
-  Object.assign(T, { spawn: performance.now() + T.targets[T.i].delay, fromYaw: T.yaw, fromPitch: T.pitch, peak: 0, path: 0, bodyHits: 0 });
+  const lead = T.i === 0 ? COUNTDOWN : 0;
+  Object.assign(T, {
+    spawn: performance.now() + lead + T.targets[T.i].delay, fromYaw: T.yaw, fromPitch: T.pitch, peak: 0, path: 0, bodyHits: 0,
+    flick: { peak: 0, slowRun: 0, done: false, reach: null, fixes: 0, moving: false },
+  });
 }
+const COUNTDOWN = 1500; // ms of 3, 2, 1 before the first enemy, so nobody starts mid-reach for the mouse
 function finishTest() {
   const shots = T.hits + T.misses;
   const r = { median: median(T.times), accuracy: shots ? T.hits / shots : 0, headshot: T.hits ? T.heads / T.hits : 0 };
   st.results[T.kind] = r;
   if (T.kind === 'flat') { st.hist = T.hist; st.peaks = T.peaks; }
   const avg = key => T.shots.length ? T.shots.reduce((sum, s) => sum + s[key], 0) / T.shots.length : 0;
+  const reaches = T.outcomes.filter(o => o.reach != null).map(o => o.reach);
+  const gap = median(T.gaps);
   const id = Date.now();
   const run = {
     id, schema: 2, seed, date: new Date(id).toISOString(), kind: T.kind, rawInput: T.raw, dpi: st.dpi, sens: T.sens,
+    input: { event: T.event, reportHz: gap ? Math.round(1000 / gap) : null },
     curve: T.curve ? { mode: st.mode, slow: st.slow, fast: st.fast, start: st.start, end: st.end, exp: st.exp } : null,
     hand: { lr: T.lr, ud: T.ud, rot: T.rot },
     configKey: handKey(st),
@@ -1729,18 +1828,74 @@ function finishTest() {
       medianMs: Math.round(r.median), accuracy: r.accuracy, headshotRate: r.headshot,
       kills: T.outcomes.length - T.escaped, escaped: T.escaped, hits: T.hits, heads: T.heads, misses: T.misses,
       avgErrorDeg: +avg('errorDeg').toFixed(3), avgOvershootDeg: +avg('overshootDeg').toFixed(3),
+      flickReach: reaches.length ? +median(reaches).toFixed(3) : null, flicksMeasured: reaches.length,
     },
     shots: T.shots,
     targets: T.outcomes,
   };
   const movement = { runId: id, columns: SAMPLE_COLUMNS, samples: T.samples };
-  const kind = T.kind;
   T.running = false;
-  closeTest();
+  T.done = run;
+  if (document.pointerLockElement) document.exitPointerLock();
+  showDone(run);
   render();
-  // Leaving fullscreen resizes the page, so wait a moment before moving to the results.
-  if (kind !== 'hand') setTimeout(() => $('step3').scrollIntoView(), 200);
   return saveRun(run, movement).then(refreshHistory).catch(storageFailed);
+}
+// Per-drill numbers for one run: the end screen and step 2 both show these.
+const BAND_NAME = { peek: 'Peeks', strafe: 'Strafes', flick: 'Flicks', turn: 'Turns', right: 'Right', left: 'Left', up: 'Up', down: 'Down' };
+function bandStats(run) {
+  const order = run.kind === 'hand' ? ['right', 'left', 'up', 'down'] : ['peek', 'strafe', 'flick', 'turn'];
+  return order.map(band => {
+    const tg = (run.targets || []).filter(t => t.band === band);
+    if (!tg.length) return null;
+    const kills = tg.filter(t => t.outcome !== 'escaped');
+    const hits = run.shots.filter(s => s.band === band && s.hit);
+    const reach = tg.filter(t => t.reach != null).map(t => t.reach);
+    return {
+      band, name: BAND_NAME[band], total: tg.length, kills: kills.length,
+      headshot: hits.length ? hits.filter(s => s.result === 'head').length / hits.length : null,
+      ms: kills.length ? median(kills.map(t => t.timeMs)) : null,
+      reach: reach.length ? median(reach) : null,
+    };
+  }).filter(Boolean);
+}
+// What a first-flick landing means, in words.
+function reachWords(r) {
+  if (r == null) return 'n/a';
+  const pc = Math.round(r * 100);
+  if (r > 1.03) return `${pc}%, past the target`;
+  if (r < 0.88) return `${pc}%, short`;
+  return `${pc}%, on target`;
+}
+function statsRows(run) {
+  return bandStats(run).map(b => `<tr><td>${b.name}</td><td>${b.kills} of ${b.total}</td><td>${b.headshot == null ? 'n/a' : fmt(b.headshot * 100, 0) + '%'}</td><td>${b.ms == null ? 'n/a' : fmt(b.ms, 0) + ' ms'}</td><td>${reachWords(b.reach)}</td></tr>`).join('');
+}
+function showDone(run) {
+  const s = run.summary;
+  $('testStart').hidden = true;
+  $('testDone').hidden = false;
+  $('doneTitle').textContent = run.kind === 'hand' ? 'Hand check done' : 'Test done';
+  $('doneKills').textContent = `${s.kills} of ${s.kills + s.escaped}`;
+  $('doneHs').textContent = s.hits ? fmt(s.headshotRate * 100, 0) + '%' : 'n/a';
+  $('doneMs').textContent = s.medianMs ? fmt(s.medianMs, 0) + ' ms' : 'n/a';
+  $('doneReach').textContent = s.flickReach == null ? 'n/a' : fmt(s.flickReach * 100, 0) + '%';
+  $('doneRows').innerHTML = statsRows(run);
+  $('doneInput').textContent = inputWords(run);
+  $('doneNext').textContent = run.kind === 'hand' ? 'See my hand check' : run.kind === 'curve' ? 'Back to my curve' : 'See my curve';
+  $('doneNext').focus();
+}
+function inputWords(run) {
+  const i = run.input || {};
+  const how = run.rawInput ? 'Raw mouse input' : 'Mouse input with Windows pointer settings';
+  const rate = i.reportHz ? `, reports about every ${fmt(1000 / i.reportHz, 1)} ms` : '';
+  return `${how}${rate}. First flick is where your opening move stopped: 100% means right on the head.`;
+}
+function leaveDone() {
+  const run = T && T.done;
+  closeTest();
+  if (!run) return;
+  // Leaving fullscreen resizes the page, so wait a moment before moving to the results.
+  setTimeout(() => $(run.kind === 'hand' ? 'handCheck' : run.kind === 'curve' ? 'results' : 'step3').scrollIntoView({ block: 'start' }), 200);
 }
 
 /* ---------- Pop sound, synthesized so no audio files are needed ---------- */
@@ -1820,8 +1975,16 @@ function recommend(runs, moves, cfg) {
   reasons.push(`In the last moment before clicking, your hand was usually under ${fmt(aimSpeed, 1)} in/s, so the ramp starts at ${start} and your final aim stays steady.`);
   reasons.push(`Your flicks and turns peaked around ${fmt(flickPeak, 0)} in/s, so the ramp ends at ${end}.`);
 
+  // Where the opening flick stopped says more than where the click landed: by the click,
+  // most players have already corrected. Most hands stop a little short (about 90-97%).
+  const reaches = flat.flatMap(r => (r.targets || []).filter(t => (t.band === 'flick' || t.band === 'turn') && t.reach != null).map(t => t.reach));
   let ratio = 1.25;
-  if (over < -0.5) { ratio += 0.15; reasons.push(`You stop short of targets (${fmt(over, 2)}° on first shots), so the top goes up.`); }
+  if (reaches.length >= 6) {
+    const reach = median(reaches), pc = fmt(reach * 100, 0);
+    if (reach > 1.03) { ratio -= clamp((reach - 1) * 2, 0.05, 0.2); reasons.push(`Your first flicks landed at ${pc}% of the way to the head, past the target, so the top comes down.`); }
+    else if (reach < 0.88) { ratio += clamp((0.95 - reach) * 2, 0.05, 0.2); reasons.push(`Your first flicks landed at ${pc}% of the way to the head, short of the target, so the top goes up.`); }
+    else reasons.push(`Your first flicks landed at ${pc}% of the way to the head, which is on target, so the top stays moderate.`);
+  } else if (over < -0.5) { ratio += 0.15; reasons.push(`You stop short of targets (${fmt(over, 2)}° on first shots), so the top goes up.`); }
   else if (over > 0.5) { ratio -= 0.1; reasons.push(`You flick past targets (+${fmt(over, 2)}° on first shots), so the top comes down.`); }
   else reasons.push(`Your flick distance is on target (${over > 0 ? '+' : ''}${fmt(over, 2)}° on first shots), so the top stays moderate.`);
   if (turnEscape >= 0.25) { ratio += 0.15; reasons.push(`${fmt(turnEscape * 100, 0)}% of enemies behind you got away, so big turns get more help.`); }
@@ -2041,11 +2204,24 @@ function storageFailed() {
   $('historyNote').hidden = false;
   $('historyNote').textContent = 'This browser blocked saving, so runs are not being stored. Private windows often do this.';
 }
+function renderLast() {
+  const run = saved.runs.filter(r => r.kind !== 'hand' && Array.isArray(r.targets)).pop();
+  $('measured').hidden = !run;
+  if (!run) return;
+  $('lastHead').textContent = run.kind === 'curve' ? 'Your last test, with your curve' : 'Your last test';
+  const peaks = run.shots.filter(s => (s.band === 'flick' || s.band === 'turn') && s.hit && s.peakSpeedInS >= 3).map(s => s.peakSpeedInS);
+  const s = run.summary;
+  const reach = s.flickReach == null ? '' : ` Your first flicks landed at ${fmt(s.flickReach * 100, 0)}% of the way to the head${s.flickReach > 1.03 ? ', so you tend to flick past' : s.flickReach < 0.88 ? ', so you tend to stop short' : ''}.`;
+  $('measureRead').textContent = `${s.kills} of ${s.kills + s.escaped} enemies killed, ${s.hits ? fmt(s.headshotRate * 100, 0) : 0}% of hits were headshots.${peaks.length ? ` Flicks and turns peaked around ${fmt(median(peaks), 0)} in/s.` : ''}${reach}`;
+  $('lastRows').innerHTML = statsRows(run);
+  $('lastInput').textContent = inputWords(run);
+}
 async function refreshHistory() {
   const [allRuns, allMoves] = await Promise.all([getAll('runs'), getAll('movement')]);
   const runs = allRuns.filter(validRun), moves = allMoves.filter(validMove);
   saved = { runs, moves };
   renderRec();
+  renderLast();
   $('history').hidden = !runs.length;
   $('historyNote').hidden = !!runs.length;
   if (!runs.length) $('historyNote').textContent = 'No saved tests yet. Finish a test and it shows up here.';
@@ -2138,7 +2314,7 @@ async function beginTest() {
     }
   }
   document.documentElement.requestFullscreen && $('test').requestFullscreen().catch(() => {});
-  Object.assign(T, { running: true, yaw: 0, pitch: 0, i: 0, hits: 0, heads: 0, misses: 0, escaped: 0, times: [], peaks: [], shots: [], samples: [], outcomes: [], flash: null, hitMark: null, hitAt: 0, ghost: null, sparks: [], hist: new Array(HBINS).fill(0), targets: T.kind === 'hand' ? handLayout() : layout(), last: performance.now(), t0: performance.now() });
+  Object.assign(T, { running: true, done: null, event: RAW_EVENT, gaps: [], win: [], props: crates(), yaw: 0, pitch: 0, i: 0, hits: 0, heads: 0, misses: 0, escaped: 0, times: [], peaks: [], shots: [], samples: [], outcomes: [], flash: null, hitMark: null, hitAt: 0, ghost: null, sparks: [], hist: new Array(HBINS).fill(0), targets: T.kind === 'hand' ? handLayout() : layout(), last: performance.now(), t0: performance.now() });
   markSpawn();
   $('testStart').hidden = true;
   requestAnimationFrame(frame);
@@ -2147,12 +2323,14 @@ const ARENA = {
   light: {
     sky1: '#7fa8c4', sky2: '#d9e6ec', floor1: '#b7b2a6', floor2: '#85817a', lines: 'rgba(255, 255, 255, 0.28)',
     wall1: '#ece8df', wall2: '#e2ded3', wallBase: '#a9a497', wallCap: '#f7f5ef', marker: '#b9b4a6',
-    block: '#c9c4b6', blockBase: '#8d897d', blockTop: '#efece3', blockSide: '#a39e90', suit: '#2a2e35', chest: '#3a3f49',
+    block: '#c9c4b6', blockBase: '#8d897d', blockTop: '#efece3', blockSide: '#a39e90', suit: '#2a2e35', chest: '#4a505c',
+    belt: '#16191e', helmet: '#3a3f49', crate: '#b08a5a', crateTop: '#cfac7c', crateEdge: '#7d5f3b',
   },
   dark: {
     sky1: '#0c1320', sky2: '#2b3c52', floor1: '#2d3239', floor2: '#1b1f24', lines: 'rgba(255, 255, 255, 0.13)',
     wall1: '#3b434d', wall2: '#333a44', wallBase: '#20252b', wallCap: '#5a6470', marker: '#66717e',
-    block: '#505863', blockBase: '#2c3138', blockTop: '#727b87', blockSide: '#3a4149', suit: '#646c78', chest: '#78818e',
+    block: '#505863', blockBase: '#2c3138', blockTop: '#727b87', blockSide: '#3a4149', suit: '#646c78', chest: '#8c95a2',
+    belt: '#2a2f36', helmet: '#4a525d', crate: '#6b5a44', crateTop: '#86725a', crateEdge: '#3f3428',
   },
 };
 function frame() {
@@ -2165,6 +2343,8 @@ function frame() {
   const proj = c => ({ x: cx + f * c.x / c.z, y: cy - f * c.y / c.z });
   const now = performance.now();
   const tgt = T.targets[T.i], ms = now - T.spawn;
+  // A mouse that stops sends nothing at all, so silence counts as standing still.
+  if (now - T.last > 20) { trackFlick(0, now); if (T.flick) T.flick.moving = false; }
   if (ms > tgt.limit) {
     T.flash = { text: 'Got away', until: now + 500 };
     endTarget('escaped', tgt.limit);
@@ -2233,6 +2413,16 @@ function frame() {
   }
   g.textAlign = 'left';
 
+  // Crates along the wall, behind every enemy, so the room has depth without hiding anyone.
+  for (const c of T.props) {
+    if (Math.abs(wrap180(c.yaw - T.yaw)) > 75) continue;
+    const front = { yaw: c.yaw, dist: c.dist }, back = { yaw: c.yaw, dist: c.dist + c.d }, top = -EYE_H + c.h;
+    quad([P(front, -c.w / 2, top), P(front, c.w / 2, top), P(back, c.w / 2, top), P(back, -c.w / 2, top)], A.crateTop);
+    quad([P(front, -c.w / 2, -EYE_H), P(front, c.w / 2, -EYE_H), P(front, c.w / 2, top), P(front, -c.w / 2, top)], A.crate);
+    quad([P(front, -c.w / 2, top - 0.08), P(front, c.w / 2, top - 0.08), P(front, c.w / 2, top), P(front, -c.w / 2, top)], A.crateEdge);
+    quad([P(front, -c.w / 2, -EYE_H), P(front, c.w / 2, -EYE_H), P(front, c.w / 2, -EYE_H + 0.08), P(front, -c.w / 2, -EYE_H + 0.08)], A.crateEdge);
+  }
+
   /* ---- props and enemies ---- */
   const block = (t, l1, l2, h1, h2) => {
     const s = (a, b, fill) => quad([P(t, l1, a), P(t, l2, a), P(t, l2, b), P(t, l1, b)], fill);
@@ -2269,25 +2459,58 @@ function frame() {
       g.strokeStyle = color; g.lineWidth = (w + grow) * m;
       g.beginPath(); g.moveTo(p.x + x1 * m, p.y + y1 * m); g.lineTo(p.x + x2 * m, p.y + y2 * m); g.stroke();
     };
-    const lean = dir * 0.03;
-    const parts = grow => color => {
-      seg(-0.09, 0.9, -0.1 + stride, BODY_H - 0.08, 0.17, color, grow);     // legs
-      seg(0.09, 0.9, 0.1 - stride, BODY_H - 0.08, 0.17, color, grow);
-      seg(-0.21 + lean, 0.3, -0.22 - stride * 0.5, 0.74, 0.1, color, grow); // arms
-      seg(0.21 + lean, 0.3, 0.22 + stride * 0.5, 0.74, 0.1, color, grow);
-      seg(lean, 0.34, 0, 0.82, 0.38, color, grow);                          // torso
+    const lean = dir * 0.03, X = v => p.x + v * m, Y = v => p.y + v * m;
+    // Torso: wide at the shoulders, narrow at the belt. Sized to the body hitbox.
+    const torso = new Path2D();
+    torso.moveTo(X(-0.25 + lean), Y(0.25)); torso.lineTo(X(0.25 + lean), Y(0.25));
+    torso.lineTo(X(0.17), Y(0.9)); torso.lineTo(X(-0.17), Y(0.9)); torso.closePath();
+    const limbs = grow => color => {
+      seg(-0.09, 0.88, -0.1 + stride, BODY_H - 0.06, 0.16, color, grow);    // legs
+      seg(0.09, 0.88, 0.1 - stride, BODY_H - 0.06, 0.16, color, grow);
       seg(lean * 2, 0.08, lean, 0.26, 0.11, color, grow);                   // neck
     };
-    const rim = Math.max(0.03, 2 / m);
-    parts(rim * 2)('#d8261c');                 // one continuous red outline
-    const suit = flash ? '#f7f5ef' : A.suit;
-    parts(0)(suit);
-    if (!flash) seg(lean, 0.3, 0, 0.56, 0.2, A.chest, 0); // chest plate, for some form
+    const arms = grow => color => {
+      seg(-0.22 + lean, 0.3, -0.06, 0.55, 0.1, color, grow);                // rear hand on the grip
+      seg(0.22 + lean, 0.3, 0.24, 0.47, 0.1, color, grow);                  // front hand on the barrel
+    };
+    const rifle = grow => color => {
+      seg(-0.14, 0.56, 0.42, 0.44, 0.075, color, grow);
+      seg(-0.02, 0.55, 0.0, 0.66, 0.06, color, grow);                       // magazine
+    };
+    const rim = Math.max(0.03, 2 / m), red = '#d8261c';
 
-    g.fillStyle = '#d8261c';
+    // one continuous red outline around everything
+    limbs(rim * 2)(red); arms(rim * 2)(red); rifle(rim * 2)(red);
+    g.strokeStyle = red; g.lineWidth = rim * 2 * m; g.stroke(torso);
+
+    const suit = flash ? '#f7f5ef' : A.suit;
+    limbs(0)(suit);
+    if (flash) g.fillStyle = suit;
+    else {
+      const lit = g.createLinearGradient(X(-0.25), 0, X(0.25), 0); // light from the left
+      lit.addColorStop(0, A.chest); lit.addColorStop(1, A.suit);
+      g.fillStyle = lit;
+    }
+    g.fill(torso);
+    if (!flash) {
+      seg(lean * 0.5, 0.86, 0, 0.86, 0.05, A.belt, 0);                     // belt
+      seg(lean, 0.32, lean * 0.7, 0.5, 0.16, A.suit, 0);                    // chest plate seam, for some form
+    }
+    rifle(0)(flash ? suit : '#1a1d22');
+    arms(0)(suit);
+
+    // head: red rim, face, then a helmet over the top
+    const hr = Math.max(1.5, HEAD_R * m);
+    g.fillStyle = red;
     g.beginPath(); g.arc(p.x, p.y, Math.max(2, (HEAD_R + rim) * m), 0, 7); g.fill();
     g.fillStyle = flash ? '#ffffff' : '#ffd9c7';
-    g.beginPath(); g.arc(p.x, p.y, Math.max(1.5, HEAD_R * m), 0, 7); g.fill();
+    g.beginPath(); g.arc(p.x, p.y, hr, 0, 7); g.fill();
+    if (!flash && hr > 3) {
+      g.fillStyle = A.helmet;
+      g.beginPath(); g.arc(p.x, p.y, hr, Math.PI * 1.08, Math.PI * 1.92); g.closePath(); g.fill();
+      g.fillStyle = 'rgba(255, 255, 255, 0.35)';                            // a glint, so it reads as round
+      g.beginPath(); g.arc(p.x - hr * 0.35, p.y - hr * 0.55, hr * 0.18, 0, 7); g.fill();
+    }
     g.restore();
   };
 
@@ -2300,6 +2523,11 @@ function frame() {
   if (tgt.elev > 0 && !(ghost && ghost.t === tgt)) block(tgt, -1.6, 1.6, -EYE_H, tgt.elev - BODY_H);
   if (ms >= 0) drawEnemy(tgt, ms, 1, now - T.hitAt < 90);
   cover(tgt); // drawn even before a peek, so you can hold the angle
+
+  // Darker corners keep the eye in the middle, where the crosshair is.
+  const vig = g.createRadialGradient(cx, cy, Math.min(W, H) * 0.35, cx, cy, Math.hypot(cx, cy));
+  vig.addColorStop(0, 'rgba(0, 0, 0, 0)'); vig.addColorStop(1, 'rgba(0, 0, 0, 0.32)');
+  g.fillStyle = vig; g.fillRect(0, 0, W, H);
 
   /* ---- arrow, effects, crosshair ---- */
   if (ms >= 0) {
@@ -2349,15 +2577,42 @@ function frame() {
     g.textAlign = 'left';
   };
   if (T.flash && now < T.flash.until) label(T.flash.text, cx, cy + 58, 21, 'center');
+  const countLeft = T.t0 + COUNTDOWN - now;
+  if (countLeft > 0) label(String(Math.ceil(countLeft / (COUNTDOWN / 3))), cx, cy - 70, 64, 'center');
 
   /* ---- progress along the top ---- */
   const trackW = Math.min(320, W * 0.4), trackX = cx - trackW / 2, done = T.i / T.targets.length;
   g.fillStyle = 'rgba(16, 20, 25, 0.62)';
   g.beginPath();
-  if (g.roundRect) g.roundRect(trackX - 16, 14, trackW + 32, 46, 8); else g.rect(trackX - 16, 14, trackW + 32, 46);
+  if (g.roundRect) g.roundRect(trackX - 16, 14, trackW + 32, 84, 8); else g.rect(trackX - 16, 14, trackW + 32, 84);
   g.fill();
   bar(trackX, 46, trackW, 5, 'rgba(255, 255, 255, 0.25)');
   bar(trackX, 46, trackW * done, 5, '#2bf0a2');
+  // time before this enemy gets away, turning amber in the last third
+  if (ms >= 0) {
+    const left = clamp(1 - ms / tgt.limit, 0, 1);
+    bar(trackX, 55, trackW * left, 3, left < 1 / 3 ? '#ffb347' : 'rgba(255, 255, 255, 0.7)');
+  }
+  // heading strip: which way you face, the wall numbers, and where the enemy is
+  const span = 120, cy0 = 76, toX = d => cx + d / (span / 2) * (trackW / 2);
+  g.save();
+  g.beginPath(); g.rect(trackX - 4, cy0 - 12, trackW + 8, 26); g.clip();
+  g.fillStyle = 'rgba(255, 255, 255, 0.55)';
+  g.font = '600 12px Bahnschrift, "Segoe UI", sans-serif'; g.textAlign = 'center';
+  for (let a = Math.ceil((T.yaw - span / 2) / 15) * 15; a <= T.yaw + span / 2; a += 15) {
+    const x = toX(a - T.yaw), major = ((a % 90) + 90) % 90 === 0;
+    bar(x - 0.5, cy0 - (major ? 8 : 4), 1, major ? 8 : 4, 'rgba(255, 255, 255, 0.55)');
+    if (major) g.fillText(String(((Math.round(a / 90) % 4) + 4) % 4 + 1), x, cy0 + 12);
+  }
+  g.restore();
+  bar(cx - 1, cy0 - 11, 2, 12, '#2bf0a2');
+  if (ms >= 0) {
+    const off = wrap180(tgt.yaw + deg(Math.atan2(lateral(tgt, ms), tgt.dist)) - T.yaw);
+    const x = toX(clamp(off, -span / 2, span / 2));
+    g.fillStyle = '#ff4a3d';
+    g.beginPath(); g.moveTo(x, cy0 - 1); g.lineTo(x - 5, cy0 - 9); g.lineTo(x + 5, cy0 - 9); g.closePath(); g.fill();
+  }
+  g.textAlign = 'left';
   g.font = '600 14.5px Bahnschrift, "Segoe UI", sans-serif';
   g.fillStyle = '#ffffff';
   g.fillText(`Enemy ${T.i + 1} of ${T.targets.length}`, trackX, 37);
@@ -2374,8 +2629,12 @@ $('testCancel').addEventListener('click', closeTest);
 $('testGo').addEventListener('click', beginTest);
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && T && !T.running) closeTest(); });
 document.addEventListener('pointerlockchange', () => { if (!document.pointerLockElement && T && T.running) closeTest(); });
-$('testCanvas').addEventListener('pointermove', e => onMove(e.movementX, e.movementY, e.timeStamp));
-$('testCanvas').addEventListener('pointerdown', e => { if (e.button === 0) onShot(); });
+// pointerrawupdate fires for every mouse report instead of once per frame, where the browser has it.
+const RAW_EVENT = 'onpointerrawupdate' in window ? 'pointerrawupdate' : 'pointermove';
+$('testCanvas').addEventListener(RAW_EVENT, onPointer);
+$('testCanvas').addEventListener('pointerdown', e => { if (e.button === 0) onShot(e.timeStamp); });
+$('doneNext').addEventListener('click', leaveDone);
+$('doneAgain').addEventListener('click', () => { const kind = T && T.done ? T.done.kind : 'flat'; openTest(kind); beginTest(); });
 
 const currentTheme = () => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
 function paintTheme() {
