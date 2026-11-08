@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-dH2jJfdhWrzcU/I7u0vBSTjgrHNYG3MYXGKW1qluklM='; style-src 'sha256-KWK7HQ151wKi2EScDK/wIykB3HQEKYZVWywEzE5Tq8w='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-DniI1l9zXaMAnYPDYhlevZfKYPPox+TCbQV0ey+8fQg='; style-src 'sha256-vs5k97bONobTLSBi1aXF6nr+i05jS75/adJUbpmyeDI='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="referrer" content="no-referrer">
@@ -49,7 +49,7 @@
   .mark path { fill: none; stroke: var(--accent); stroke-width: 3.5; stroke-linecap: round; }
   [data-theme=dark] .mark rect { fill: #27302a; }
   html:not([data-theme=dark]) .mark path { stroke: #7fdc5a; }
-  #themeToggle { padding: 7px 12px; font-size: 14px; }
+  #themeToggle { padding: 7px 14px; font-size: 14px; }
   .intro { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: 48px; align-items: center; padding: 56px 0 52px; }
   .intro h1 { font: 600 clamp(36px, 5vw, 56px)/1.06 var(--head); letter-spacing: -0.01em; margin: 0 0 18px; }
   .hero-copy p { font-size: 18px; color: var(--soft); margin: 0 0 12px; max-width: 34em; }
@@ -75,7 +75,7 @@
 
   .stepnav { position: sticky; top: 0; z-index: 5; margin: 0 -22px; padding: 0 22px; background: var(--bg); }
   .stepnav ol { position: relative; list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--line); }
-  .stepnav a { display: flex; align-items: baseline; gap: 7px; padding: 13px 4px 12px; color: var(--soft); text-decoration: none; font: 600 15px var(--head); transition: color .2s; }
+  .stepnav a { display: flex; align-items: baseline; gap: 7px; min-height: 46px; padding: 13px 4px 12px; color: var(--soft); text-decoration: none; font: 600 15px var(--head); transition: color .2s; }
   .stepnav a b { font-weight: 600; color: var(--soft); font-variant-numeric: tabular-nums; transition: color .2s; }
   .stepnav a:hover, .stepnav a[aria-current] { color: var(--ink); }
   .stepnav a[aria-current] b { color: var(--accent-dark); }
@@ -125,7 +125,32 @@
   button.primary { background: var(--btn); color: #fff; border-color: var(--btn); padding: 13px 22px; font-size: 16px; }
   button.primary:hover { background: var(--btn-hover); border-color: var(--btn-hover); }
   .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
-  .check { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 14.5px; cursor: pointer; }
+  .check { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 8px; font-size: 14.5px; cursor: pointer; }
+  /* 44px keeps every control comfortable to hit on a phone. */
+  button, .filebtn { min-height: 44px; }
+  /* A file picker styled as a button: the real input stays focusable for keyboards and screen readers. */
+  .filebtn {
+    position: relative; display: inline-flex; align-items: center; padding: 10px 15px; cursor: pointer;
+    font: 600 15px var(--body); background: var(--field); border: 1px solid var(--field-line); border-radius: 7px;
+    transition: border-color .15s;
+  }
+  .filebtn:hover { border-color: var(--ink); }
+  .filebtn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sr-file { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .fields5 { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 6px; }
+  #impResult:not(:empty) { margin-top: 16px; }
+  .imp-ok { background: var(--bg); border-radius: 8px; padding: 14px 16px; }
+  .imp-ok p { margin: 0 0 6px; }
+  .feel { margin-top: 28px; padding-top: 4px; border-top: 1px solid var(--line); }
+  /* Grouped by what the player is fixing, so the layout carries the meaning. */
+  .feelgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 16px; margin-top: 12px; }
+  .feelgroup { display: flex; flex-direction: column; gap: 8px; }
+  .feelgroup button { width: 100%; }
+  .feelhead { margin: 0; font: 600 14px var(--head); color: var(--soft); }
+  .feelgrid small { display: block; color: var(--soft); font-size: 13px; font-weight: 400; margin-top: 2px; }
+  .faq details { margin-top: 0; padding: 4px 0; }
+  .faq details:first-child { border-top: 0; }
+  .faq p { margin: 0 0 14px; max-width: 46em; color: var(--soft); }
 
   .drill { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
   .dia { display: block; width: 100%; max-width: 132px; height: auto; margin-bottom: 8px; overflow: visible; }
@@ -205,7 +230,7 @@
   .speed-table { margin-top: 14px; }
 
   details { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
-  summary { display: flex; align-items: center; gap: 10px; cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; transition: color .15s; }
+  summary { display: flex; align-items: center; gap: 10px; min-height: 44px; cursor: pointer; font-weight: 600; font-size: 15px; list-style: none; transition: color .15s; }
   summary::-webkit-details-marker { display: none; }
   summary::before { content: ""; flex: none; width: 7px; height: 7px; margin-left: 2px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(-45deg); transition: transform .22s var(--ease); }
   details[open] > summary::before { transform: translate(0, -2px) rotate(45deg); }
@@ -272,8 +297,8 @@
       <p>A mouse curve keeps your sens steady when you aim slowly and speeds it up on fast swings, so small adjustments stay precise and big turns take less arm.</p>
       <p>Sensline watches how you really aim in a short Valorant-style test, then builds the settings file for RawAccel, a free mouse acceleration driver for Windows.</p>
       <div class="cta">
-        <button class="primary" id="startGuide">Get started</button>
-        <span>Takes about 5 minutes. Runs in your browser and saves only on this device.</span>
+        <button class="primary" id="startGuide">Set up my curve</button>
+        <span>Runs in your browser. Your tests and settings stay on this device.</span>
       </div>
     </div>
     <figure class="hero-fig">
@@ -308,6 +333,24 @@
       </div>
       <p class="readout" id="setupRead"></p>
       <p class="callout" id="setupWarn" hidden></p>
+
+      <details id="importBox">
+        <summary>Already use RawAccel? Bring your current curve in</summary>
+        <p class="note mt0">Sensline converts it to Sens Multiplier 1 with Device Menu DPI 0, keeps the same feel, and lets you tune it from there. Check your DPI and Valorant sens above first, because the conversion uses them.</p>
+        <div class="row">
+          <label class="filebtn">Choose your settings.json<input type="file" id="importFile" class="sr-file" accept=".json,application/json"></label>
+        </div>
+        <p class="note">RawAccel keeps <code>settings.json</code> in the same folder as <code>rawaccel.exe</code>. Or type what your panel shows for a Linear curve:</p>
+        <div class="fields fields5">
+          <label class="f">Sens Multiplier <input type="number" id="impMult" min="0.01" step="0.01"><small>Left empty counts as 1</small></label>
+          <label class="f">Device Menu DPI <input type="number" id="impDpi" min="0" step="50"><small>Left empty counts as 0</small></label>
+          <label class="f">Acceleration <input type="number" id="impAccel" min="0" step="0.0001"><small>Required</small></label>
+          <label class="f">Cap: Output <input type="number" id="impCap" min="1" step="0.05"><small>Required</small></label>
+          <label class="f">Input Offset <input type="number" id="impOffset" min="0" step="0.5"><small>Left empty counts as 0</small></label>
+        </div>
+        <div class="row"><button type="button" id="impPanel">Convert these values</button></div>
+        <div id="impResult" role="status" aria-live="polite"></div>
+      </details>
     </section>
 
     <section class="step" id="step2">
@@ -320,7 +363,7 @@
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(58 28)" class="foe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g><g transform="translate(20 15)"><g class="cross a-flick"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></g></svg><b>Flicks</b>Enemies stand off to one side</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><circle class="ring" cx="36" cy="20" r="16"/><circle class="foe" cx="36" cy="33" r="3.4"/><g class="a-turn turnfx"><path class="view" d="M36 20 L28 6 L44 6 Z"/></g><circle cx="36" cy="20" r="2.4" class="cross"/></svg><b>Turns</b>Enemies appear behind you</li>
       </ul>
-      <p class="callout">If RawAccel is already running with a curve, turn it off first. Otherwise the test applies acceleration twice.</p>
+      <p class="callout">If RawAccel is running with a curve, set its dropdown to Off and click Apply before you start. Otherwise the test adds the curve twice.</p>
       <div class="row"><button class="primary" id="runFlat">Start the aim test</button></div>
       <label class="check"><input type="checkbox" id="sound"> Play a sound when I hit an enemy</label>
       <div id="measured" hidden><p class="readout" id="measureRead"></p></div>
@@ -373,6 +416,29 @@
           <thead><tr><th>Hand speed</th><th>Sens</th><th>Full 360° takes</th><th>Compared to today</th></tr></thead>
           <tbody id="speedRows"></tbody>
         </table>
+      </div>
+
+      <div class="feel">
+        <h3>After a few games, how does it feel?</h3>
+        <p class="note mt0">Each button makes one small change to your curve. Apply it in RawAccel, then play a few games before the next one.</p>
+        <div class="feelgrid" id="feelButtons">
+          <div class="feelgroup" role="group" aria-labelledby="fgFlicks">
+            <p class="feelhead" id="fgFlicks">Flicks</p>
+            <button type="button" data-feel="over">I flick past targets<small>Acceleration down 15%</small></button>
+            <button type="button" data-feel="under">I stop short of targets<small>Acceleration up 15%</small></button>
+          </div>
+          <div class="feelgroup" role="group" aria-labelledby="fgSwings">
+            <p class="feelhead" id="fgSwings">Big swings</p>
+            <button type="button" data-feel="turns">Big turns take too much arm<small>Cap: Output up 0.05</small></button>
+            <button type="button" data-feel="wild">Fast swings feel out of control<small>Cap: Output down 0.05</small></button>
+          </div>
+          <div class="feelgroup" role="group" aria-labelledby="fgSlow">
+            <p class="feelhead" id="fgSlow">Slow aim</p>
+            <button type="button" data-feel="jumpy">Small aim feels jumpy<small>Boost starts later</small></button>
+          </div>
+        </div>
+        <p class="readout" id="feelMsg" role="status" aria-live="polite"></p>
+        <div class="row"><button type="button" id="feelUndo" hidden>Undo the last change</button></div>
       </div>
 
       <div class="row"><button id="runCurve">Try this curve in the test</button></div>
@@ -464,9 +530,35 @@
       </details>
     </section>
 
+    <section class="step" id="faq">
+      <h2>Questions</h2>
+      <div class="faq">
+        <details>
+          <summary>Why does Sens Multiplier stay at 1?</summary>
+          <p>Sens Multiplier scales every speed, including your slow aim. Keeping it at 1 leaves your slow aim exactly as it is in Valorant today, so Acceleration and Cap: Output do all the tuning. If you had another value before, step 1 can convert your setup and move that difference into your Valorant sens.</p>
+        </details>
+        <details>
+          <summary>Why does Device Menu DPI have to be 0?</summary>
+          <p>Sensline's values assume RawAccel reads raw mouse counts. Any DPI in Device Menu rescales your whole sens, so a file built for 0 feels slower or faster than planned. In RawAccel, open Advanced, then Device Menu, and set DPI to 0.</p>
+        </details>
+        <details>
+          <summary>I changed my mouse DPI. What do I redo?</summary>
+          <p>Enter the new DPI in step 1, then install again from step 4. Acceleration and Input Offset are worked out for one DPI, so they change with it. Your Valorant sens should change too, to keep the same cm per 360°.</p>
+        </details>
+        <details>
+          <summary>How do I turn the curve off?</summary>
+          <p>In RawAccel, set the curve dropdown under Rotation to Off and click Apply. Do this before the aim test in step 2, otherwise the test adds the curve twice.</p>
+        </details>
+        <details>
+          <summary>Does the curve change my slow aim?</summary>
+          <p>Not below Input Offset. Under that hand speed your sens is your Valorant sens, unchanged. Above it the boost builds at the rate set by Acceleration until it reaches Cap: Output.</p>
+        </details>
+      </div>
+    </section>
+
     <section class="step" id="data">
       <h2>Your test history</h2>
-      <p class="note" id="historyNote">No saved tests yet. Finish a test and it shows up here.</p>
+      <p class="note" id="historyNote">Loading your saved tests…</p>
       <div id="history" hidden>
         <div class="scroll"><table class="compact mt10">
           <thead><tr>
@@ -483,6 +575,10 @@
           <button id="clearRuns">Delete saved tests</button>
         </div>
       </div>
+      <div class="row">
+        <label class="filebtn">Restore a backup<input type="file" id="restoreFile" class="sr-file" accept=".json,application/json"></label>
+      </div>
+      <p class="note" id="restoreMsg" role="status" aria-live="polite">Restores tests from a file made with Download all data. Tests you already have stay as they are.</p>
       <details>
         <summary>Privacy and safety</summary>
         <ul class="reasons">
@@ -1202,6 +1298,193 @@ $('startGuide').addEventListener('click', () => {
   $('step1').scrollIntoView();
   $('dpi').focus({ preventScroll: true });
 });
+
+/* ---------- Import an existing RawAccel setup ---------- */
+const keyStarting = (obj, prefix) => Object.keys(obj || {}).find(k => k.startsWith(prefix));
+const finitePos = v => isNum(v) && v > 0;
+
+// Reads a RawAccel 1.6 or 1.7 settings.json into the pieces convertSetup needs. Throws a message a player can act on.
+function readSettingsFile(text) {
+  let j;
+  try { j = JSON.parse(text); } catch (e) { throw new Error("This file isn't valid JSON, so it isn't a RawAccel settings file."); }
+  if (!j || typeof j !== 'object' || !Array.isArray(j.profiles) || !j.profiles.length || typeof j.profiles[0] !== 'object' || !j.profiles[0]) {
+    throw new Error("No RawAccel profile was found in this file. Pick the settings.json next to rawaccel.exe.");
+  }
+  const p = j.profiles[0], notes = [];
+  const is17 = 'Output DPI' in p, is16 = 'Sensitivity multiplier' in p;
+  if (!is17 && !is16) throw new Error("This file is from a RawAccel version older than 1.6, which Sensline can't read. Update RawAccel, open it once, and try again.");
+  if (j.profiles.length > 1) notes.push(`Your file has ${j.profiles.length} profiles. Sensline used the first one, "${String(p.name ?? '')}".`);
+  const mult = is17 ? p['Output DPI'] / 1000 : p['Sensitivity multiplier'];
+  const yx = p[keyStarting(p, 'Y/X')];
+  if (isNum(yx) && yx !== 1) notes.push(`Y/X Ratio was ${fmt(yx)}. Sensline keeps vertical sens the same as horizontal.`);
+  const speed = is17 ? (p['Input speed calculation parameters'] || {}) : p;
+  if (speed[keyStarting(speed, 'Whole')] === false) notes.push('Your curve used By Component. Sensline builds Whole curves, so diagonal flicks may feel slightly different.');
+  for (const k of ['Stretches domain', 'Stretches accel range']) {
+    const v = p[keyStarting(p, k)];
+    if (v && (v.x !== 1 || v.y !== 1)) { notes.push('Anisotropy Domain or Range was not 1 and 1. Sensline resets both to 1.'); break; }
+  }
+  const dev = j.defaultDeviceConfig || {};
+  if (Array.isArray(j.devices) && j.devices.length) notes.push('Your file also has settings for specific devices. Sensline used the default device settings.');
+  const args = p['Whole or horizontal accel parameters'];
+  if (!args || typeof args !== 'object') throw new Error('This profile has no curve settings. Pick a starting point in step 3 instead.');
+  return {
+    args, mult, devDpi: dev[keyStarting(dev, 'DPI')] || 0, notes,
+    lr: p[keyStarting(p, 'L/R')] ?? 1, ud: p[keyStarting(p, 'U/D')] ?? 1, rot: p['Degrees of rotation'] ?? 0,
+  };
+}
+
+// Turns RawAccel's units back into Sensline's: speeds in in/s at the player's DPI, with the sens multiplier folded into Valorant sens.
+function convertSetup(setup, dpi, valSens) {
+  const { args: A, mult, devDpi } = setup;
+  if (!finitePos(mult)) throw new Error('Sens Multiplier has to be a number above 0.');
+  if (!isNum(devDpi) || devDpi < 0) throw new Error('Device Menu DPI has to be 0 or a positive number.');
+  const speedK = devDpi > 0 ? 1000 / devDpi : 1;   // what the driver multiplies counts/ms by
+  const net = mult * speedK;                        // overall sens scale RawAccel applied
+  const kx = dpi / 1000 * speedK;                   // RawAccel speed units per in/s
+  const base = valSens * net;
+  const mode = A.mode, gain = A['Gain / Velocity'] ?? A.gain ?? true;
+  if (mode === 'noaccel') throw new Error('This setup has no curve: its dropdown is Off. Pick a starting point in step 3 instead.');
+  if (gain === false) throw new Error('This curve has Gain switched off. Sensline only builds Gain curves, so tick Gain in RawAccel first, or pick a starting point in step 3.');
+  const o = isNum(A.inputOffset) ? A.inputOffset : 0;
+  let curve;
+  if (mode === 'classic') {
+    const p = A.exponentClassic, a = A.acceleration, capMode = A['Cap mode'] || 'output', cap = A['Cap / Jump'] || {};
+    if (!(p > 1)) throw new Error('Power has to be above 1.');
+    let ratio, capX;
+    if (capMode === 'in_out') { ratio = cap.y; capX = cap.x; }
+    else if (capMode === 'input') {
+      if (!finitePos(a)) throw new Error('Acceleration has to be above 0.');
+      capX = cap.x; ratio = 1 + p * Math.pow(a * (capX - o), p - 1);
+    } else {
+      if (!finitePos(a)) throw new Error('Acceleration has to be above 0.');
+      ratio = cap.y; capX = o + Math.pow((ratio - 1) / p, 1 / (p - 1)) / a;
+    }
+    if (!isNum(ratio) || ratio <= 1) throw new Error('Cap: Output has to be above 1. Sensline needs a cap, and a cap below 1 would slow your fast swings down.');
+    if (!isNum(capX) || capX <= o) throw new Error("The cap is reached before the boost starts, so this curve can't be converted.");
+    curve = { mode: p === 2 ? 'linear' : 'classic', exp: p === 2 ? 2 : p, slow: base, fast: base * ratio, start: o / kx, end: capX / kx };
+  } else if (mode === 'natural') {
+    const L = A.limit, d = A.decayRate;
+    if (!(L > 1)) throw new Error('Limit has to be above 1.');
+    if (!finitePos(d)) throw new Error('Decay Rate has to be above 0.');
+    const start = o / kx;
+    curve = { mode: 'natural', exp: 2, slow: base, fast: base * L, start, end: start + 3 * (L - 1) / (d * kx) };
+  } else if (mode === 'synchronous' || mode === 'motivity') {
+    const m = A.motivity;
+    const sync = mode === 'motivity' ? A.midpoint : A.syncSpeed;
+    // 1.6's Motivity is the same curve with growth = ln(2 * gamma / ln(motivity)).
+    const gamma = mode === 'motivity' ? Math.log(m) * Math.exp(A.growthRate) / 2 : A.gamma;
+    if (!(m > 1)) throw new Error('Motivity has to be above 1.');
+    if (!finitePos(sync) || !finitePos(gamma)) throw new Error('SyncSpeed and Gamma have to be above 0.');
+    if (mode === 'synchronous' && isNum(A.smooth) && A.smooth !== 0.5) setup.notes.push(`Smooth was ${fmt(A.smooth)}. Sensline uses 0.5, so the curve's corners are slightly softer or sharper.`);
+    const s = sync / kx, end = s * Math.exp(2 * Math.log(m) / gamma);
+    curve = { mode: 'synchronous', exp: 2, slow: base / m, fast: base * m, start: s * s / end, end };
+  } else {
+    throw new Error(`Sensline can't convert the ${String(mode)} curve type yet. Linear, Classic, Natural and Synchronous work.`);
+  }
+  if (!Object.values(curve).every(v => typeof v === 'string' || (isNum(v) && v >= 0)) || curve.end <= curve.start) {
+    throw new Error("These numbers don't make a working curve. Check them against your RawAccel panel.");
+  }
+  return { curve: { ...curve, lr: setup.lr, ud: setup.ud, rot: setup.rot }, net, base };
+}
+
+let pendingImport = null;
+function showImport(fn) {
+  const box = $('impResult');
+  pendingImport = null;
+  try {
+    const setup = fn();
+    const { curve, net, base } = convertSetup(setup, st.dpi, st.sens);
+    pendingImport = { curve, net, base };
+    const kind = { linear: 'Linear', classic: 'Classic', natural: 'Natural', synchronous: 'Synchronous' }[curve.mode];
+    const lines = [`${kind} curve: sens ${fmt(curve.slow)} when you aim slowly, rising toward ${fmt(curve.fast)} on fast swings.`];
+    if (Math.abs(net - 1) > 1e-6) lines.push(`Your old setup scaled everything by ${fmt(net)}, so your real sens today is ${fmt(base)}, not ${fmt(st.sens)}. Sensline moves that into your Valorant sens.`);
+    box.innerHTML = `<div class="imp-ok">${lines.map(t => `<p>${esc(t)}</p>`).join('')}`
+      + (setup.notes.length ? `<ul class="reasons">${setup.notes.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : '')
+      + `<div class="row"><button type="button" class="primary" id="impUse">Use this curve</button></div></div>`;
+    $('impUse').addEventListener('click', useImport);
+  } catch (e) {
+    box.innerHTML = `<p class="callout">${esc(e.message)}</p>`;
+  }
+}
+function useImport() {
+  if (!pendingImport) return;
+  const { curve, net, base } = pendingImport;
+  changeCurve(() => {
+    Object.assign(st, curve, { preset: null });
+    if (Math.abs(net - 1) > 1e-6) st.sens = base;
+  });
+  pendingImport = null;
+  $('impResult').innerHTML = `<p class="readout">Loaded. Step 3 shows your curve, and step 4 has the values for Sens Multiplier 1.</p>`;
+}
+$('importFile').addEventListener('change', () => {
+  const file = $('importFile').files[0];
+  $('importFile').value = '';
+  if (!file) return;
+  if (file.size > 2e6) { $('impResult').innerHTML = `<p class="callout">That file is too big to be a RawAccel settings file.</p>`; return; }
+  $('impResult').innerHTML = '<p class="note">Reading your file…</p>';
+  file.text().then(text => showImport(() => readSettingsFile(text)), () => {
+    $('impResult').innerHTML = `<p class="callout">The browser couldn't read that file. Try choosing it again.</p>`;
+  });
+});
+$('impPanel').addEventListener('click', () => showImport(() => {
+  const v = id => { const x = parseFloat($(id).value); return isFinite(x) ? x : null; };
+  const mult = v('impMult') ?? 1, devDpi = v('impDpi') ?? 0, a = v('impAccel'), cap = v('impCap'), offset = v('impOffset') ?? 0;
+  if (a === null || cap === null) throw new Error('Enter at least Acceleration and Cap: Output from your RawAccel panel.');
+  if (offset < 0) throw new Error("Input Offset can't be negative.");
+  return {
+    args: { mode: 'classic', 'Gain / Velocity': true, exponentClassic: 2, acceleration: a, inputOffset: offset, 'Cap mode': 'output', 'Cap / Jump': { x: 0, y: cap } },
+    mult, devDpi, lr: st.lr, ud: st.ud, rot: st.rot, notes: [],
+  };
+}));
+
+/* ---------- Tune by feel: one small, undoable change per button ---------- */
+const feelUndo = [];
+const curveOf = () => ({ mode: st.mode, slow: st.slow, fast: st.fast, start: st.start, end: st.end, exp: st.exp });
+function describeChange(before) {
+  const k = st.dpi / 1000, a = c => (c.fast / c.slow - 1) / (2 * (c.end - c.start)) / k, now = curveOf(), out = [];
+  if (st.mode === 'linear') {
+    if (Math.abs(a(before) - a(now)) > 1e-9) out.push(`Acceleration ${fmt(a(before), 6)} to ${fmt(a(now), 6)}`);
+    if (Math.abs(before.fast / before.slow - now.fast / now.slow) > 1e-9) out.push(`Cap: Output ${fmt(before.fast / before.slow, 3)} to ${fmt(now.fast / now.slow, 3)}`);
+    if (Math.abs(before.start - now.start) > 1e-9) out.push(`Input Offset ${fmt(before.start * k, 2)} to ${fmt(now.start * k, 2)}`);
+  } else {
+    if (Math.abs(before.end - now.end) > 1e-9) out.push(`boost ends at ${fmt(now.end, 1)} in/s instead of ${fmt(before.end, 1)}`);
+    if (Math.abs(before.fast - now.fast) > 1e-9) out.push(`top sens ${fmt(before.fast)} to ${fmt(now.fast)}`);
+    if (Math.abs(before.start - now.start) > 1e-9) out.push(`boost starts at ${fmt(now.start, 1)} in/s instead of ${fmt(before.start, 1)}`);
+  }
+  return out.join(', ');
+}
+function setTop(ratio) {
+  const a = linearAccel();
+  st.fast = st.slow * ratio;
+  if (st.mode === 'linear') st.end = st.start + (ratio - 1) / (2 * a); // keep Acceleration where it was, as RawAccel does
+}
+const FEEL = {
+  over: () => { st.end = st.start + (st.end - st.start) / 0.85; },
+  under: () => { st.end = st.start + (st.end - st.start) / 1.15; },
+  turns: () => setTop(st.fast / st.slow + 0.05),
+  wild: () => setTop(Math.max(1.02, st.fast / st.slow - 0.05)),
+  jumpy: () => { const d = Math.max(1, st.start * 0.25); st.start += d; st.end += d; },
+};
+$('feelButtons').addEventListener('click', e => {
+  const b = e.target.closest('button[data-feel]');
+  if (!b) return;
+  const before = curveOf();
+  changeCurve(() => { FEEL[b.dataset.feel](); st.preset = null; });
+  const what = describeChange(before);
+  if (!what) { $('feelMsg').textContent = 'That setting is already at its limit, so nothing changed.'; return; }
+  feelUndo.push(before);
+  if (feelUndo.length > 20) feelUndo.shift();
+  $('feelMsg').textContent = `Changed ${what}. Step 4 has the new values.`;
+  $('feelUndo').hidden = false;
+});
+$('feelUndo').addEventListener('click', () => {
+  const prev = feelUndo.pop();
+  if (!prev) return;
+  const before = curveOf();
+  changeCurve(() => Object.assign(st, prev, { preset: null }));
+  $('feelMsg').textContent = `Undone: ${describeChange(before)}.`;
+  $('feelUndo').hidden = !feelUndo.length;
+});
 $('raVersion').addEventListener('change', () => { st.raVersion = $('raVersion').value === '1.6' ? '1.6' : '1.7'; render(); });
 $('mode').addEventListener('change', () => changeCurve(() => {
   st.mode = $('mode').value;
@@ -1800,6 +2083,43 @@ $('clearRuns').addEventListener('click', async () => {
   refreshHistory();
 });
 
+// Restore adds runs from a "Download all data" file. Every run is checked like stored data, and runs already saved are left alone.
+async function restoreRuns(runs, moves) {
+  const d = await db();
+  return new Promise((resolve, reject) => {
+    const t = d.transaction(['runs', 'movement'], 'readwrite');
+    for (const r of runs) t.objectStore('runs').put(r);
+    for (const m of moves) t.objectStore('movement').put(m);
+    t.oncomplete = resolve;
+    t.onerror = t.onabort = () => reject(t.error);
+  });
+}
+$('restoreFile').addEventListener('change', async () => {
+  const file = $('restoreFile').files[0], msg = $('restoreMsg');
+  $('restoreFile').value = '';
+  if (!file) return;
+  if (file.size > 100e6) { msg.textContent = "That file is over 100 MB, which is more than a Sensline backup should be. Check it's the right file."; return; }
+  msg.textContent = 'Reading your backup…';
+  try {
+    let data;
+    try { data = JSON.parse(await file.text()); } catch (e) { throw new Error("This file isn't valid JSON. Pick a file made with Download all data."); }
+    if (!data || !Array.isArray(data.runs)) throw new Error('No saved tests were found in this file. Pick a file made with Download all data.');
+    const runs = data.runs.filter(validRun);
+    const moves = (Array.isArray(data.movement) ? data.movement : []).filter(validMove);
+    const have = new Set((await getAll('runs')).map(r => r.id));
+    const fresh = runs.filter(r => !have.has(r.id)), ids = new Set(fresh.map(r => r.id));
+    const skippedBad = data.runs.length - runs.length;
+    if (fresh.length) await restoreRuns(fresh, moves.filter(m => ids.has(m.runId)));
+    const parts = [fresh.length ? `Added ${fresh.length === 1 ? '1 test' : fresh.length + ' tests'}.` : 'No new tests to add.'];
+    if (runs.length - fresh.length) parts.push(`${runs.length - fresh.length} ${runs.length - fresh.length === 1 ? 'was' : 'were'} already saved.`);
+    if (skippedBad) parts.push(`${skippedBad} ${skippedBad === 1 ? "entry wasn't" : "entries weren't"} a valid test and ${skippedBad === 1 ? 'was' : 'were'} skipped.`);
+    msg.textContent = parts.join(' ');
+    await refreshHistory();
+  } catch (e) {
+    msg.textContent = e.message || 'Something went wrong while restoring. Your saved tests were not changed.';
+  }
+});
+
 async function beginTest() {
   const cv = $('testCanvas');
   T.raw = true;
@@ -2081,7 +2401,7 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
 });
 
 // Test hook, only when served from this machine's own dev server.
-if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.sensline = { buildCurve, panelArgs, settingsJSON, appValues, synchronousGain, naturalGain, cm360, get state() { return st; }, get test() { return T; }, onMove, onShot, openTest, render, layout, handLayout, adaptHand, flickFacts, lateral, hitTest, headCam, recommend, playPop, playTick, getAll, shotsCSV };
+if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') window.sensline = { buildCurve, panelArgs, readSettingsFile, convertSetup, settingsJSON, appValues, synchronousGain, naturalGain, cm360, get state() { return st; }, get test() { return T; }, onMove, onShot, openTest, render, layout, handLayout, adaptHand, flickFacts, lateral, hitTest, headCam, recommend, playPop, playTick, getAll, shotsCSV };
 // Scroll choreography: each step rises in once, the graph draws itself once, the nav follows along.
 function setupMotion() {
   const steps = [...document.querySelectorAll('section.step')];
