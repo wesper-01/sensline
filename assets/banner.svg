@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 440" width="1280" height="440" role="img" aria-labelledby="t d">
+<title id="t">Sensline</title>
+<desc id="d">A RawAccel curve for Valorant. Sensitivity stays at 0.35 for slow aim, rises to 0.362 for a 20 inch per second flick and 0.413 for a 60 inch per second turn.</desc>
+<style>
+  .bg { fill: #f2f5f1; } .ink { fill: #141a16; } .soft { fill: #56605a; }
+  .grid { stroke: #dde2dc; stroke-width: 1; } .tick { fill: #56605a; font: 13px "Segoe UI", system-ui, sans-serif; }
+  .flat { stroke: #858e87; stroke-width: 2; stroke-dasharray: 6 6; fill: none; }
+  .curve { stroke: #2f7d32; stroke-width: 3.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .area { fill: #2f7d32; opacity: .08; }
+  .ring { fill: #f2f5f1; stroke: #2f7d32; stroke-width: 3; }
+  .dot { fill: #2f7d32; }
+  .mk-v { fill: #141a16; font: 600 20px Bahnschrift, "DIN Alternate", "Segoe UI", system-ui, sans-serif; }
+  .mk-t { fill: #56605a; font: 13px "Segoe UI", system-ui, sans-serif; }
+  .brand { fill: #141a16; font: 600 64px Bahnschrift, "DIN Alternate", "Segoe UI", system-ui, sans-serif; letter-spacing: -1px; }
+  .tag { fill: #56605a; font: 21px "Segoe UI", system-ui, sans-serif; }
+  .lab { fill: #56605a; font: 13px "Segoe UI", system-ui, sans-serif; }
+  .mark-bg { fill: #141a16; } .mark-p { fill: none; stroke: #7fdc5a; stroke-width: 3.5; stroke-linecap: round; }
+  @media (prefers-color-scheme: dark) {
+    .bg { fill: #101412; } .ink, .brand, .mk-v { fill: #edf2ee; } .soft, .tick, .mk-t, .tag, .lab { fill: #a8b3ab; }
+    .grid { stroke: #262d28; } .flat { stroke: #8b958d; } .curve { stroke: #7fdc5a; } .area, .dot { fill: #7fdc5a; }
+    .ring { fill: #101412; stroke: #7fdc5a; } .mark-bg { fill: #27302a; }
+  }
+
+  /* 9 s loop: draw the curve, call out three speeds, run a dot along it, then reset. */
+  .curve { stroke-dasharray: 1000; animation: draw 9s cubic-bezier(.4,0,.2,1) infinite; }
+  .area { animation: area 9s ease infinite; }
+  .mk { opacity: 0; animation: mk 9s ease infinite; }
+  .mk1 { animation-name: mk1; } .mk2 { animation-name: mk2; }
+  .dot { opacity: 0; animation: dot 9s linear infinite; }
+  @keyframes draw { 0% { stroke-dashoffset: 1000; } 26% { stroke-dashoffset: 0; } 94% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+  @keyframes area { 0%, 20% { opacity: 0; } 32%, 92% { opacity: .08; } 100% { opacity: 0; } }
+  @keyframes mk  { 0%, 27% { opacity: 0; } 31%, 92% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes mk1 { 0%, 32% { opacity: 0; } 36%, 92% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes mk2 { 0%, 37% { opacity: 0; } 41%, 92% { opacity: 1; } 100% { opacity: 0; } }
+  @keyframes dot { 0%, 44% { opacity: 0; } 46%, 86% { opacity: 1; } 89%, 100% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) {
+    .curve, .area, .mk, .dot { animation: none; } .mk { opacity: 1; } .area { opacity: .08; } .dot { opacity: 0; }
+  }
+</style>
+<rect class="bg" width="1280" height="440" rx="18"/>
+
+<g transform="translate(64 128)">
+  <g transform="scale(1.6)"><rect class="mark-bg" width="32" height="32" rx="7"/><path class="mark-p" d="M6 22h6c5 0 7-12 14-12"/></g>
+  <text class="brand" x="70" y="46">Sensline</text>
+  <text class="tag" x="0" y="122">A RawAccel curve for Valorant,</text>
+  <text class="tag" x="0" y="152">built from how you really aim.</text>
+  <text class="lab" x="0" y="216">Aim test, curve builder and install steps for RawAccel 1.6 and 1.7.</text>
+  <text class="lab" x="0" y="238">Runs in your browser. Nothing leaves your PC.</text>
+</g>
+
+<line class="grid" x1="600" x2="1220" y1="340.9" y2="340.9"/><text class="tick" x="588" y="344.9" text-anchor="end">0.34</text><line class="grid" x1="600" x2="1220" y1="278.7" y2="278.7"/><text class="tick" x="588" y="282.7" text-anchor="end">0.36</text><line class="grid" x1="600" x2="1220" y1="216.4" y2="216.4"/><text class="tick" x="588" y="220.4" text-anchor="end">0.38</text><line class="grid" x1="600" x2="1220" y1="154.2" y2="154.2"/><text class="tick" x="588" y="158.2" text-anchor="end">0.40</text><line class="grid" x1="600" x2="1220" y1="92" y2="92"/><text class="tick" x="588" y="96" text-anchor="end">0.42</text><text class="tick" x="600" y="396" text-anchor="middle">0</text><text class="tick" x="703.3" y="396" text-anchor="middle">10</text><text class="tick" x="806.7" y="396" text-anchor="middle">20</text><text class="tick" x="910" y="396" text-anchor="middle">30</text><text class="tick" x="1013.3" y="396" text-anchor="middle">40</text><text class="tick" x="1116.7" y="396" text-anchor="middle">50</text><text class="tick" x="1220" y="396" text-anchor="middle">60</text>
+<text class="lab" x="1220" y="424" text-anchor="end">Hand speed, inches per second</text>
+<text class="lab" x="588" y="58" text-anchor="end">Sens</text>
+<line class="flat" x1="600" x2="1220" y1="309.8" y2="309.8"/>
+<text class="lab" x="1220" y="331.8" text-anchor="end">Without a curve: 0.35 everywhere</text>
+<path class="area" d="M600 309.8 L610.3 309.8 L620.7 309.8 L631 309.8 L641.3 309.8 L651.7 309.8 L662 309.8 L672.3 309.8 L682.7 309.8 L693 309.2 L703.3 307.6 L713.7 305.7 L724 302.9 L734.3 299.8 L744.7 296.7 L755 293 L765.3 289.2 L775.7 285.5 L786 281.5 L796.3 277.4 L806.7 273.1 L817 268.7 L827.3 264.4 L837.7 260 L848 255.3 L858.3 250.7 L868.7 246.3 L879 241.6 L889.3 237 L899.7 232.3 L910 227.3 L920.3 222.7 L930.7 218 L941 213 L951.3 208.4 L961.7 203.4 L972 198.7 L982.3 193.7 L992.7 188.8 L1003 184.1 L1013.3 179.1 L1023.7 174.4 L1034 169.8 L1044.3 165.4 L1054.7 161.4 L1065 157.3 L1075.3 153.6 L1085.7 149.9 L1096 146.4 L1106.3 143 L1116.7 139.9 L1127 136.8 L1137.3 134 L1147.7 130.9 L1158 128.4 L1168.3 125.6 L1178.7 123.1 L1189 120.6 L1199.3 118.1 L1209.7 116 L1220 113.8 L1220 309.8 L600 309.8 Z"/>
+<path class="curve" pathLength="1000" d="M600 309.8 L610.3 309.8 L620.7 309.8 L631 309.8 L641.3 309.8 L651.7 309.8 L662 309.8 L672.3 309.8 L682.7 309.8 L693 309.2 L703.3 307.6 L713.7 305.7 L724 302.9 L734.3 299.8 L744.7 296.7 L755 293 L765.3 289.2 L775.7 285.5 L786 281.5 L796.3 277.4 L806.7 273.1 L817 268.7 L827.3 264.4 L837.7 260 L848 255.3 L858.3 250.7 L868.7 246.3 L879 241.6 L889.3 237 L899.7 232.3 L910 227.3 L920.3 222.7 L930.7 218 L941 213 L951.3 208.4 L961.7 203.4 L972 198.7 L982.3 193.7 L992.7 188.8 L1003 184.1 L1013.3 179.1 L1023.7 174.4 L1034 169.8 L1044.3 165.4 L1054.7 161.4 L1065 157.3 L1075.3 153.6 L1085.7 149.9 L1096 146.4 L1106.3 143 L1116.7 139.9 L1127 136.8 L1137.3 134 L1147.7 130.9 L1158 128.4 L1168.3 125.6 L1178.7 123.1 L1189 120.6 L1199.3 118.1 L1209.7 116 L1220 113.8"/>
+<g class="mk mk0"><circle class="ring" cx="651.7" cy="309.8" r="6"/><text class="mk-v" x="665.7" y="293.8" text-anchor="start">0.350</text><text class="mk-t" x="665.7" y="271.8" text-anchor="start">Slow aim, 5 in/s</text></g><g class="mk mk1"><circle class="ring" cx="806.7" cy="273.1" r="6"/><text class="mk-v" x="806.7" y="251.10000000000002" text-anchor="middle">0.362</text><text class="mk-t" x="806.7" y="229.10000000000002" text-anchor="middle">Flick, 20 in/s</text></g><g class="mk mk2"><circle class="ring" cx="1220" cy="113.8" r="6"/><text class="mk-v" x="1206" y="91.8" text-anchor="end">0.413</text><text class="mk-t" x="1206" y="69.8" text-anchor="end">Big turn, 60 in/s</text></g>
+<circle class="dot" r="7"><animateMotion dur="9s" repeatCount="indefinite" calcMode="linear" keyPoints="0;0;1;1" keyTimes="0;0.46;0.86;1" path="M600 309.8 L610.3 309.8 L620.7 309.8 L631 309.8 L641.3 309.8 L651.7 309.8 L662 309.8 L672.3 309.8 L682.7 309.8 L693 309.2 L703.3 307.6 L713.7 305.7 L724 302.9 L734.3 299.8 L744.7 296.7 L755 293 L765.3 289.2 L775.7 285.5 L786 281.5 L796.3 277.4 L806.7 273.1 L817 268.7 L827.3 264.4 L837.7 260 L848 255.3 L858.3 250.7 L868.7 246.3 L879 241.6 L889.3 237 L899.7 232.3 L910 227.3 L920.3 222.7 L930.7 218 L941 213 L951.3 208.4 L961.7 203.4 L972 198.7 L982.3 193.7 L992.7 188.8 L1003 184.1 L1013.3 179.1 L1023.7 174.4 L1034 169.8 L1044.3 165.4 L1054.7 161.4 L1065 157.3 L1075.3 153.6 L1085.7 149.9 L1096 146.4 L1106.3 143 L1116.7 139.9 L1127 136.8 L1137.3 134 L1147.7 130.9 L1158 128.4 L1168.3 125.6 L1178.7 123.1 L1189 120.6 L1199.3 118.1 L1209.7 116 L1220 113.8"/></circle>
+</svg>
