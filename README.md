@@ -1,41 +1,53 @@
 <p align="center">
-  <img src="assets/banner.svg" width="100%" alt="Sensline. A RawAccel curve for Valorant: sens stays at 0.35 for slow aim, rises to 0.362 on a 20 in/s flick and 0.413 on a 60 in/s turn.">
+  <img src="assets/banner.svg" width="100%" alt="Sensline. A RawAccel curve for Valorant: micro aim sits 15% below today's sens at 0.297, flicks still average today's 0.35, and big swings rise to 0.425.">
 </p>
 
-Your crosshair placement wants a low sens. Your 180s want a high one. A mouse curve gives you both: sens stays put while your hand moves slowly and climbs only when you swing fast.
+Micro adjustments and tracking want a low sens. Flicks want the sens your muscle memory knows. Dodges and 180s want more. A mouse curve gives you all three: low while your hand barely moves, your normal sens through a flick, higher when you really swing.
 
-Sensline finds that curve from how you actually aim. You play a short Valorant-style test, it reads your hand speeds, and it writes a `settings.json` for [RawAccel](https://github.com/RawAccel/rawaccel), the free mouse acceleration driver for Windows.
+Sensline builds that curve from how you actually aim. You play a short Valorant-style test, it measures your hand speeds and where your flicks land, and it writes a `settings.json` for [RawAccel](https://github.com/RawAccel/rawaccel), the free mouse acceleration driver for Windows.
 
 <p align="center">
-  <img src="assets/shot-hero.png" width="860" alt="The Sensline home page, with a live graph of the current curve: 60 in/s hand speed gives sens 0.413 and a 39.5 cm 360.">
+  <img src="assets/shot-hero.png" width="860" alt="The Sensline home page, with a live graph of the current curve: it starts below today's sens and climbs to 0.425 at 60 in/s, a 38.5 cm 360.">
 </p>
 
 ## From your mouse to RawAccel in four steps
 
 **1. Your mouse.** Enter your DPI and Valorant sens. Already running RawAccel? Load your current `settings.json` or type in your panel values, and Sensline converts them so you start from the curve you know.
 
-**2. The aim test.** 24 enemies across peeks, strafes, flicks and turns, played at your normal sens. Sensline records how fast your hand moves in each one.
+**2. The aim test.** 24 enemies across peeks, strafes, flicks and turns, played at your normal sens. Sensline reads every mouse report, records how fast your hand moves, and tracks where each first flick stops before you correct it. At the end you get kills, headshots, time per kill and flick landing for each drill.
 
 <p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for peeks, strafes, flicks and turns."></p>
 
-**3. Your curve.** You get a recommended curve, or you can start from Subtle, Balanced or Strong. Acceleration is the main dial. Cap: Output sets how high the curve can go.
+**3. Your curve.** You get a recommended curve, or you can start from Light, Balanced or Precise. Three numbers sit above the graph: your micro aim sens, the sens your flicks feel like, and your sens on big swings. Set micro aim with its own slider, and leave "Keep flicks feeling the same" on so your flicks don't drift while you tune.
 
-<p align="center"><img src="assets/shot-curve.png" width="760" alt="Step 3: the Balanced preset at Acceleration 0.005859 and Cap: Output 1.3, with the curve chart and a table of sens at each hand speed."></p>
+<p align="center"><img src="assets/shot-curve.png" width="760" alt="Step 3: the Balanced preset. Micro aim 0.297, flicks feel like 0.35, big swings 0.425. Below are the micro aim, Acceleration and Cap: Output sliders, then the graph with the micro aim zone and typical flick peak marked."></p>
 
-**4. Install.** Pick your RawAccel version (1.6 or 1.7), download the file, and check it against the same field names you see in the app.
+**4. Install.** Pick your RawAccel version (1.6 or 1.7), download the file, and check it against the same field names you see in the app. The page tells you the sens to type into Valorant, which is your micro aim sens.
 
-<p align="center"><img src="assets/shot-install.png" width="760" alt="Step 4: set Valorant sens to 0.35, pick the RawAccel version, follow the six install steps and download settings.json."></p>
+<p align="center"><img src="assets/shot-install.png" width="760" alt="Step 4: set Valorant sens to 0.297, pick the RawAccel version, follow the install steps and download settings.json."></p>
 
-## What the curve does to your sens
+## How the curve keeps your flicks
 
-This is the Balanced preset at 800 DPI and 0.35 sens. Slow aim is untouched. The boost only shows up once your hand is really moving.
+A flick speeds up and slows down, and the crosshair covers most of the distance near the fastest part. So the sens a flick feels like is the average along that whole motion, not the sens at any one speed. Sensline works out that average for a flick at your measured peak speed, then picks Acceleration so it equals your sens today. Micro aim can sit as low as you like, and your flick distances stay where your muscle memory expects them.
 
-| Hand speed | Sens | Full 360° | Compared to no curve |
+This is the Balanced preset at 800 DPI and 0.35 sens:
+
+| Hand speed | Sens | Full 360° | Compared to today |
 | :-- | --: | --: | --: |
-| Slow, 5 in/s | 0.350 | 46.7 cm | +0% |
-| Medium, 15 in/s | 0.355 | 45.9 cm | +2% |
-| Fast, 30 in/s | 0.376 | 43.4 cm | +8% |
-| Very fast, 60 in/s | 0.413 | 39.5 cm | +18% |
+| Micro aim and tracking, under 3 in/s | 0.297 | 54.9 cm | -15% |
+| Slow, 5 in/s | 0.308 | 52.9 cm | -12% |
+| **A whole flick peaking at 12 in/s, on average** | **0.350** | **46.7 cm** | **Same** |
+| Medium, 15 in/s | 0.386 | 42.3 cm | +10% |
+| Fast, 30 in/s | 0.412 | 39.7 cm | +18% |
+| Very fast, 60 in/s | 0.425 | 38.5 cm | +21% |
+
+| Preset | Micro aim | Flicks | Big swings, 60 in/s |
+| :-- | --: | --: | --: |
+| Light | -8% | Same | +13% |
+| Balanced | -15% | Same | +21% |
+| Precise | -25% | Same | +30% |
+
+After the aim test, the recommended curve uses your own flick speed instead of 12 in/s. If your first flicks land past the head, it makes flicks a little slower to match. If they land short, it makes them a little faster.
 
 ## Fix it by feel
 
@@ -51,12 +63,12 @@ Play a few games, then tell Sensline what went wrong. Each button makes one smal
 
 ## What it writes into RawAccel
 
-Sens Multiplier stays at 1 and the device DPI stays at 0, so Valorant sens keeps meaning what it always did. Everything the curve does lives in Acceleration, the cap and the offset. For the Balanced preset above, the RawAccel 1.7 panel reads:
+Sens Multiplier stays at 1 and the device DPI stays at 0. Your Valorant sens becomes your micro aim sens, and everything above it lives in Acceleration, the cap and the offset. For the Balanced preset above, set Valorant to 0.297 and the RawAccel 1.7 panel reads:
 
 ```text
 Sens Multiplier   1            Linear, Gain on
-Acceleration      0.005859     Cap Type      Output
-Cap: Output       1.3          Input Offset  6.4
+Acceleration      0.057723     Cap Type      Output
+Cap: Output       1.470588     Input Offset  2.4
 Device DPI        0            Polling rate  0
 ```
 
@@ -81,7 +93,7 @@ The page's security policy only allows code that matches fingerprints stored in 
 node update-csp.js
 ```
 
-The README banner is `assets/banner.svg`. It draws the Balanced curve from the app's own math and plays a short animation, which stays still for people who turn off motion.
+The README banner is `assets/banner.svg`. It draws the Balanced curve from the app's own math and plays a short animation, which stays still for people who turn off motion. The screenshots in `assets/` show the page with its default settings.
 
 </details>
 
