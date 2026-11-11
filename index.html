@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-pKuYtNTsAoCBsRyxK0kKfbfzNz246KWLbm7P8anokNc='; style-src 'sha256-s5k1tmuJzlLcFSobpv1O17gkwtGYeiwnCLMMcaElI6g='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-L8Gs+a5TlUMbuQGRUn76T2nIjDJuJHt4wjnaaT3tQn8='; style-src 'sha256-s5k1tmuJzlLcFSobpv1O17gkwtGYeiwnCLMMcaElI6g='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="referrer" content="no-referrer">
@@ -1251,11 +1251,14 @@ function drawHero() {
   for (let i = 0; i <= 90; i++) { const x = Math.max(0.05, i / 90 * xMax); line += (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(eff(x)).toFixed(1); }
   const yF = Y(st.sens).toFixed(1), cut = X(xMax * heroReveal) - l + 2;
   const s = eff(heroSpeed), hx = X(heroSpeed), hy = Y(s);
+  // The curve can sit below today's line on the left (micro aim) and above it on the right,
+  // so the label goes at the right end, on the side of the line the curve isn't on.
+  const labelY = eff(xMax) >= st.sens ? +yF + 17 : +yF - 8;
   let grid = '';
   for (let i = 1; i <= 3; i++) { const gy = t + i / 4 * (H - t - b); grid += `<line class="h-grid" x1="${l}" x2="${W - r}" y1="${gy}" y2="${gy}"/>`; }
   $('heroSvg').innerHTML = `${grid}
     <line class="h-flat" x1="${l}" x2="${W - r}" y1="${yF}" y2="${yF}"/>
-    <text class="h-text" x="${l + 2}" y="${+yF + 17}">Your sens today</text>
+    <text class="h-text" x="${W - r - 10}" y="${labelY}" text-anchor="end">Your sens today</text>
     <defs><clipPath id="heroCut"><rect x="${l - 3}" y="0" width="${cut + 3}" height="${H}"/></clipPath></defs>
     <g clip-path="url(#heroCut)">
       <path class="h-area" d="${line}L${X(xMax)} ${yF}L${X(0)} ${yF}Z"/>
