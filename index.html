@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-f3PjVIi3qyOl02mT+4YupLz6EOn03RnURSnKAtdzGtM='; style-src 'sha256-TivK24GjHcZZmVfG0/eeiHtiZohIGJ+z7F7n33Ir1Es='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-pKuYtNTsAoCBsRyxK0kKfbfzNz246KWLbm7P8anokNc='; style-src 'sha256-s5k1tmuJzlLcFSobpv1O17gkwtGYeiwnCLMMcaElI6g='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="referrer" content="no-referrer">
@@ -185,6 +185,7 @@
   .spark { display: block; width: 100%; height: 30px; margin-bottom: 8px; }
   .spark path { fill: none; stroke: var(--c-flat); stroke-width: 2; vector-effect: non-scaling-stroke; transition: stroke .15s; }
   button[aria-pressed=true] .spark path { stroke: var(--c-curve); }
+  .spark path.today, button[aria-pressed=true] .spark path.today { stroke: var(--c-cross); stroke-width: 1; stroke-dasharray: 3 3; }
   .choices button small { display: block; color: var(--soft); font-size: 13px; font-weight: 400; line-height: 1.3; margin-top: 2px; }
   button[aria-pressed=true] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 
@@ -284,7 +285,11 @@
   .tiles dd { margin: 2px 0 0; font: 600 24px var(--head); font-variant-numeric: tabular-nums; }
   #measured .tiles div { background: var(--bg); }
   #measured .tiles dt { color: var(--soft); }
-  @media (max-width: 620px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  .feeltiles { grid-template-columns: repeat(3, 1fr); margin-bottom: 20px; }
+  .feeltiles div { background: var(--bg); }
+  .feeltiles dt { color: var(--soft); }
+  .feeltiles small { display: block; font-size: 13px; color: var(--soft); font-variant-numeric: tabular-nums; }
+  @media (max-width: 620px) { .tiles { grid-template-columns: 1fr 1fr; } .feeltiles { grid-template-columns: 1fr; } }
 
   @media (max-width: 680px) {
     .drill { grid-template-columns: 1fr 1fr; }
@@ -411,14 +416,27 @@
 
       <div class="choices" id="presets"></div>
 
-      <div class="strength" id="accelSliderWrap">
+      <dl class="tiles feeltiles" id="feelTiles" aria-live="polite">
+        <div><dt>Micro aim and tracking</dt><dd id="ftMicro"></dd><small id="ftMicroPct"></small></div>
+        <div><dt>Flicks feel like</dt><dd id="ftFlick"></dd><small id="ftFlickPct"></small></div>
+        <div><dt>Big swings, 60 in/s</dt><dd id="ftTop"></dd><small id="ftTopPct"></small></div>
+      </dl>
+
+      <div class="strength" id="microWrap">
+        <label for="microSlider">Micro aim sens <output id="microOut"></output></label>
+        <input type="range" id="microSlider" min="60" max="97" step="1">
+        <p class="note mt0" id="microNote">Your sens for small adjustments and tracking. Lower is steadier.</p>
+      </div>
+      <label class="check" id="lockWrap"><input type="checkbox" id="lockFlicks"> Keep flicks feeling the same when I change micro aim or the cap</label>
+
+      <div class="strength mt14" id="accelSliderWrap">
         <label for="accelSlider">Acceleration <output id="accelOut"></output></label>
         <input type="range" id="accelSlider" min="0" max="100" step="0.5">
         <p class="note mt0">The main setting to tune: how quickly the boost builds as your hand speeds up.</p>
       </div>
       <div class="strength">
         <label for="strength"><span id="strengthLabel">Speed boost on fast swings</span> <output id="strengthOut"></output></label>
-        <input type="range" id="strength" min="5" max="80" step="1">
+        <input type="range" id="strength" min="5" max="120" step="1">
       </div>
 
       <div class="legend">
@@ -854,15 +872,47 @@ function appValues(c, dpi) {
   return rows;
 }
 
+/* ---------- Flick matching ---------- */
+// A flick's speed rises and falls (a minimum-jerk profile), and the crosshair covers most of
+// its distance near the peak. So the sens a flick "feels like" is the distance-weighted average
+// over that profile, not the sens at any one speed.
+function flickSens(curve, peak) {
+  let num = 0, den = 0;
+  for (let i = 1; i < 48; i++) {
+    const t = i / 48, v = peak * 16 * t * t * (1 - t) * (1 - t);
+    num += curve.base * curve.s(Math.max(v, 0.05)) * v;
+    den += v;
+  }
+  return num / den;
+}
+// Linear curve with a set micro sens and top, whose ramp is solved so a typical flick
+// averages `target`. Below `start` the sens stays at the micro value.
+function solveRamp(slow, fast, start, peak, target) {
+  const avg = end => flickSens(buildCurve({ mode: 'linear', slow, fast, start, end, exp: 2 }), peak);
+  let lo = start + 0.5, hi = start + 400;
+  if (avg(lo) <= target) return lo;  // even the steepest ramp can't reach it
+  if (avg(hi) >= target) return hi;  // micro sens is already at or above it
+  for (let i = 0; i < 40; i++) { const mid = (lo + hi) / 2; if (avg(mid) > target) lo = mid; else hi = mid; }
+  return (lo + hi) / 2;
+}
+const MICRO_START = 3;   // in/s: under this is micro aim and tracking for most players
+const FLICK_PEAK = 12;   // in/s: a typical Valorant flick peak, until the aim test measures yours
+function shapeCurve(sens, micro, top, peak, flickTarget = sens, start = MICRO_START) {
+  const slow = sens * micro, fast = sens * top;
+  return { mode: 'linear', slow, fast, start, end: solveRamp(slow, fast, start, peak, flickTarget) };
+}
+
 /* ---------- State ---------- */
+// Every preset keeps flicks at today's sens. They differ in how much slower micro aim gets
+// and how much extra big swings get.
 const PRESETS = [
-  { id: 'subtle', name: 'Subtle', note: '+15%, barely noticeable', mode: 'linear', lo: 1, hi: 1.15, start: 10, end: 45 },
-  { id: 'balanced', name: 'Balanced', note: '+30%, a good first try', mode: 'linear', lo: 1, hi: 1.3, start: 8, end: 40 },
-  { id: 'turns', name: 'Strong', note: '+60%, for low sens players', mode: 'linear', lo: 1, hi: 1.6, start: 12, end: 40 },
+  { id: 'light', name: 'Light', note: 'Micro aim 8% slower, flicks the same', micro: 0.92, top: 1.15 },
+  { id: 'even', name: 'Balanced', note: 'Micro aim 15% slower, flicks the same', micro: 0.85, top: 1.25 },
+  { id: 'precise', name: 'Precise', note: 'Micro aim 25% slower, flicks the same', micro: 0.75, top: 1.35 },
 ];
 // Storage keys keep the old name on purpose: renaming them would lose players' saved settings and tests.
 const STORE = 'curve-bench-v1';
-const defaults = { curveV: 2, dpi: 800, sens: 0.35, mode: 'linear', slow: 0.35, fast: 0.455, start: 8, end: 40, exp: 2, preset: 'balanced', showGain: false, sound: true, raVersion: '1.7', lr: 1, ud: 1, rot: 0, hist: null, peaks: null, results: {} };
+const defaults = { curveV: 2, dpi: 800, sens: 0.35, mode: 'linear', ...shapeCurve(0.35, 0.85, 1.25, FLICK_PEAK), exp: 2, preset: 'even', lockFlicks: true, flickPeak: FLICK_PEAK, showGain: false, sound: true, raVersion: '1.7', lr: 1, ud: 1, rot: 0, hist: null, peaks: null, results: {} };
 let st = { ...defaults };
 // Anything read back from storage is treated as untrusted: only known fields of the right type survive.
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
@@ -870,12 +920,13 @@ function cleanState(raw) {
   const out = { ...defaults, results: {} };
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return out;
   for (const k of ['dpi', 'sens', 'slow', 'fast', 'start', 'end', 'exp', 'lr', 'ud', 'rot']) if (isNum(raw[k])) out[k] = raw[k];
-  for (const k of ['showGain', 'sound']) if (typeof raw[k] === 'boolean') out[k] = raw[k];
+  if (isNum(raw.flickPeak) && raw.flickPeak >= 3 && raw.flickPeak <= 80) out.flickPeak = raw.flickPeak;
+  for (const k of ['showGain', 'sound', 'lockFlicks']) if (typeof raw[k] === 'boolean') out[k] = raw[k];
   if (['linear', 'natural', 'classic', 'synchronous'].includes(raw.mode)) out.mode = raw.mode;
   if (raw.raVersion === '1.6' || raw.raVersion === '1.7') out.raVersion = raw.raVersion;
   out.preset = PRESETS.some(p => p.id === raw.preset) ? raw.preset : null;
   // Curves saved before Linear became the default move to Balanced on the player's real sens. Fixes and results stay.
-  if (raw.curveV !== 2) Object.assign(out, { mode: 'linear', slow: out.sens, fast: out.sens * 1.3, start: 8, end: 40, preset: 'balanced' });
+  if (raw.curveV !== 2) Object.assign(out, shapeCurve(out.sens, 0.85, 1.25, out.flickPeak), { preset: 'even' });
   if (Array.isArray(raw.hist) && raw.hist.length <= 500 && raw.hist.every(v => isNum(v) && v >= 0)) out.hist = raw.hist;
   if (Array.isArray(raw.peaks) && raw.peaks.length <= 500 && raw.peaks.every(isNum)) out.peaks = raw.peaks;
   if (raw.results && typeof raw.results === 'object') {
@@ -1035,6 +1086,19 @@ function drawChart() {
     });
   }
 
+  // Micro aim zone: below the ramp start, every correction uses the low sens.
+  if (st.mode !== 'synchronous' && hStart > 0) {
+    const zw = X(Math.min(hStart, d.xMax)) - M.l;
+    out += `<rect x="${M.l}" y="${M.t}" width="${zw}" height="${py}" fill="${C.curve}" opacity="0.06"/>`;
+    // The zone is often narrow, so the label sits at its bottom edge and may run past it.
+    if (zw > 4) out += `<text x="${M.l + 6}" y="${M.t + py - 8}" fill="${C.text}" font-size="12">Micro aim</text>`;
+  }
+  // Typical flick peak: the curve is solved so a flick of this speed averages the flick sens.
+  if (st.flickPeak <= d.xMax) {
+    const fx = X(st.flickPeak);
+    out += `<line x1="${fx}" x2="${fx}" y1="${M.t}" y2="${M.t + py}" stroke="${C.cross}" stroke-dasharray="2 4"/>
+      <text x="${fx + 6}" y="${M.t + 16}" fill="${C.text}" font-size="12">Typical flick peak</text>`;
+  }
   out += `<line x1="${M.l}" x2="${W - M.r}" y1="${Y(st.sens)}" y2="${Y(st.sens)}" stroke="${C.flat}" stroke-width="1.5" stroke-dasharray="5 5"/>`;
 
   const n = Math.max(120, Math.floor(px / 3));
@@ -1126,7 +1190,7 @@ new ResizeObserver(drawChart).observe(chartEl);
 const RUN_LABEL = { flat: 'Normal sens', curve: 'Your curve', hand: 'Hand check' };
 const INPUTS = ['dpi', 'sens', 'slow', 'fast', 'start', 'end', 'exp'];
 // The slider is logarithmic: small values need the finest control.
-const ACCEL_MIN = 0.0005, ACCEL_SPAN = 100;
+const ACCEL_MIN = 0.0005, ACCEL_SPAN = 200; // 0.0005 to 0.1: low micro sens needs steep ramps
 const sliderToAccel = p => ACCEL_MIN * Math.pow(ACCEL_SPAN, p / 100);
 const accelToSlider = v => Math.log(v / ACCEL_MIN) / Math.log(ACCEL_SPAN) * 100;
 const linearAccel = () => (st.fast / st.slow - 1) / (2 * (st.end - st.start));
@@ -1143,9 +1207,14 @@ function syncInputs() {
   if (document.activeElement !== $('capOut')) $('capOut').value = +fmt(ratio, 3);
   $('showGain').checked = st.showGain;
   $('sound').checked = st.sound;
+  $('lockFlicks').checked = st.lockFlicks;
+  const micro = Math.round(st.slow / st.sens * 100);
+  if (document.activeElement !== $('microSlider')) $('microSlider').value = micro;
+  $('microSlider').style.setProperty('--pct', clamp((micro - 60) / 37 * 100, 0, 100) + '%');
+  $('microOut').textContent = `${fmt(st.slow)} (${micro}% of today)`;
   const boost = Math.round((st.fast / st.slow - 1) * 100);
   if (document.activeElement !== $('strength')) $('strength').value = boost;
-  $('strength').style.setProperty('--pct', clamp((boost - 5) / 75 * 100, 0, 100) + '%');
+  $('strength').style.setProperty('--pct', clamp((boost - 5) / 115 * 100, 0, 100) + '%');
   $('strengthOut').textContent = st.mode === 'linear' ? `${fmt(ratio, 3)} (+${boost}%)` : `+${boost}%`;
 }
 // The number to type into Valorant counts to its new value, so a change there can't be missed.
@@ -1244,6 +1313,14 @@ function render() {
 
   document.querySelectorAll('#presets button').forEach(b => b.setAttribute('aria-pressed', b.dataset.id === st.preset));
 
+  // The three numbers that matter in a match: small corrections, flicks, and big swings.
+  const vsToday = v => { const p = Math.round((v / st.sens - 1) * 100); return p === 0 ? 'Same as today' : `${p > 0 ? '+' : ''}${p}% vs today`; };
+  const micro = c.base * c.s(0.5), flick = flickSens(c, st.flickPeak), swing = c.base * c.s(60);
+  $('ftMicro').textContent = fmt(micro); $('ftMicroPct').textContent = vsToday(micro);
+  $('ftFlick').textContent = fmt(flick); $('ftFlickPct').textContent = `${vsToday(flick)}, for flicks peaking at ${fmt(st.flickPeak, 0)} in/s`;
+  $('ftTop').textContent = fmt(swing); $('ftTopPct').textContent = vsToday(swing);
+  $('microWrap').hidden = $('lockWrap').hidden = !linear;
+
   setBigSens(c.base);
   drawHero();
   const json = settingsJSON(st, st.dpi);
@@ -1262,18 +1339,36 @@ function render() {
   save();
 }
 
+// Each spark is drawn against today's sens (the faint middle line), so micro aim dips below it.
 function sparkPath(p) {
-  const c = buildCurve({ mode: p.mode, slow: 1, fast: p.hi, start: p.start, end: p.end, exp: 2 });
+  const c = buildCurve(shapeCurve(1, p.micro, p.top, FLICK_PEAK)), y = v => (28 - (v - 0.7) / 0.7 * 26).toFixed(1);
   let d = '';
-  for (let i = 0; i <= 30; i++) { const x = Math.max(0.05, i / 30 * 70); d += (i ? 'L' : 'M') + (x / 70 * 100).toFixed(1) + ' ' + (28 - (c.s(x) - 1) / 0.6 * 24).toFixed(1); }
-  return d;
+  for (let i = 0; i <= 30; i++) { const x = Math.max(0.05, i / 30 * 60); d += (i ? 'L' : 'M') + (x / 60 * 100).toFixed(1) + ' ' + y(c.base * c.s(x)); }
+  return `<path class="today" d="M0 ${y(1)}H100"/><path d="${d}"/>`;
 }
-$('presets').innerHTML = PRESETS.map(p => `<button type="button" data-id="${p.id}" aria-pressed="false"><svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true"><path d="${sparkPath(p)}"/></svg>${p.name}<small>${p.note}</small></button>`).join('');
+$('presets').innerHTML = PRESETS.map(p => `<button type="button" data-id="${p.id}" aria-pressed="false"><svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none" aria-hidden="true">${sparkPath(p)}</svg>${p.name}<small>${p.note}</small></button>`).join('');
 $('presets').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
   const p = PRESETS.find(q => q.id === b.dataset.id);
-  changeCurve(() => Object.assign(st, { mode: p.mode, slow: st.sens * p.lo, fast: st.sens * p.hi, start: p.start, end: p.end, preset: p.id }));
+  changeCurve(() => Object.assign(st, shapeCurve(st.sens, p.micro, p.top, st.flickPeak), { exp: 2, preset: p.id }));
 });
+// With the lock on, changing micro aim or the cap re-solves the ramp so a typical flick keeps its feel.
+function keepFlicks(change) {
+  if (!st.lockFlicks || st.mode !== 'linear') { change(); return; }
+  const before = flickSens(buildCurve(st), st.flickPeak);
+  change();
+  st.end = solveRamp(st.slow, st.fast, st.start, st.flickPeak, before);
+}
+$('microSlider').addEventListener('input', () => {
+  const m = parseFloat($('microSlider').value) / 100;
+  keepFlicks(() => {
+    st.slow = st.sens * m;
+    if (st.fast < st.slow * 1.05) st.fast = st.slow * 1.05;
+  });
+  st.preset = null;
+  render();
+});
+$('lockFlicks').addEventListener('change', () => { st.lockFlicks = $('lockFlicks').checked; save(); });
 for (const id of INPUTS) {
   $(id).addEventListener('input', () => {
     const v = parseFloat($(id).value);
@@ -1310,21 +1405,22 @@ $('offset').addEventListener('blur', syncInputs);
 $('capOut').addEventListener('input', () => {
   const v = parseFloat($('capOut').value);
   if (!isFinite(v) || v <= 1) return;
+  setTopRatio(v);
+});
+// Cap: Output. Unlocked, the slope stays and the cap point moves, like RawAccel's own fields.
+function setTopRatio(v) {
   const a = linearAccel();
-  st.fast = st.slow * v;
-  st.end = st.start + (v - 1) / (2 * a);
+  if (st.lockFlicks && st.mode === 'linear') keepFlicks(() => { st.fast = st.slow * v; });
+  else {
+    st.fast = st.slow * v;
+    if (st.mode === 'linear') st.end = st.start + (v - 1) / (2 * a);
+  }
   st.preset = null;
   render();
-});
+}
 $('accel').addEventListener('blur', syncInputs);
 $('capOut').addEventListener('blur', syncInputs);
-$('strength').addEventListener('input', () => {
-  const top = 1 + parseFloat($('strength').value) / 100, a = linearAccel();
-  st.fast = st.slow * top;
-  if (st.mode === 'linear') st.end = st.start + (top - 1) / (2 * a);
-  st.preset = null;
-  render();
-});
+$('strength').addEventListener('input', () => setTopRatio(1 + parseFloat($('strength').value) / 100));
 $('startGuide').addEventListener('click', () => {
   $('step1').scrollIntoView();
   $('dpi').focus({ preventScroll: true });
@@ -1813,7 +1909,12 @@ function finishTest() {
   const shots = T.hits + T.misses;
   const r = { median: median(T.times), accuracy: shots ? T.hits / shots : 0, headshot: T.hits ? T.heads / T.hits : 0 };
   st.results[T.kind] = r;
-  if (T.kind === 'flat') { st.hist = T.hist; st.peaks = T.peaks; }
+  if (T.kind === 'flat') {
+    st.hist = T.hist; st.peaks = T.peaks;
+    // Your own flick speed replaces the typical one the curve was solved for.
+    const firsts = new Set(), flicks = T.shots.filter(s => s.band === 'flick' && s.peakSpeedInS >= 3 && !firsts.has(s.target) && firsts.add(s.target));
+    if (flicks.length >= 3) st.flickPeak = clamp(median(flicks.map(s => s.peakSpeedInS)), 4, 60);
+  }
   const avg = key => T.shots.length ? T.shots.reduce((sum, s) => sum + s[key], 0) / T.shots.length : 0;
   const reaches = T.outcomes.filter(o => o.reach != null).map(o => o.reach);
   const gap = median(T.gaps);
@@ -1970,30 +2071,39 @@ function recommend(runs, moves, cfg) {
   const cm = cm360(cfg.sens, cfg.dpi);
 
   const reasons = [];
-  const start = clamp(Math.round(aimSpeed * 1.2), 2, 40);
-  const end = Math.max(start + 8, Math.round(flickPeak * 0.9));
-  reasons.push(`In the last moment before clicking, your hand was usually under ${fmt(aimSpeed, 1)} in/s, so the ramp starts at ${start} and your final aim stays steady.`);
-  reasons.push(`Your flicks and turns peaked around ${fmt(flickPeak, 0)} in/s, so the ramp ends at ${end}.`);
-
-  // Where the opening flick stopped says more than where the click landed: by the click,
-  // most players have already corrected. Most hands stop a little short (about 90-97%).
-  const reaches = flat.flatMap(r => (r.targets || []).filter(t => (t.band === 'flick' || t.band === 'turn') && t.reach != null).map(t => t.reach));
-  let ratio = 1.25;
-  if (reaches.length >= 6) {
-    const reach = median(reaches), pc = fmt(reach * 100, 0);
-    if (reach > 1.03) { ratio -= clamp((reach - 1) * 2, 0.05, 0.2); reasons.push(`Your first flicks landed at ${pc}% of the way to the head, past the target, so the top comes down.`); }
-    else if (reach < 0.88) { ratio += clamp((0.95 - reach) * 2, 0.05, 0.2); reasons.push(`Your first flicks landed at ${pc}% of the way to the head, short of the target, so the top goes up.`); }
-    else reasons.push(`Your first flicks landed at ${pc}% of the way to the head, which is on target, so the top stays moderate.`);
-  } else if (over < -0.5) { ratio += 0.15; reasons.push(`You stop short of targets (${fmt(over, 2)}° on first shots), so the top goes up.`); }
-  else if (over > 0.5) { ratio -= 0.1; reasons.push(`You flick past targets (+${fmt(over, 2)}° on first shots), so the top comes down.`); }
-  else reasons.push(`Your flick distance is on target (${over > 0 ? '+' : ''}${fmt(over, 2)}° on first shots), so the top stays moderate.`);
-  if (turnEscape >= 0.25) { ratio += 0.15; reasons.push(`${fmt(turnEscape * 100, 0)}% of enemies behind you got away, so big turns get more help.`); }
-  if (cm >= 60) { ratio += 0.15; reasons.push(`At ${fmt(cm, 0)} cm/360 big turns take a lot of arm, so the top goes up.`); }
-  if (cm < 20) { ratio = Math.min(ratio, 1.1); reasons.push(`At ${fmt(cm, 1)} cm/360 your base sens is already very fast, so the curve adds very little. Check your DPI and sens are right.`); }
-  ratio = clamp(ratio, 1.05, 1.8);
+  // Micro aim: everything under the speed your hand used while settling onto the head stays slow.
+  const start = clamp(Math.round(aimSpeed * 1.2 * 2) / 2, 2, 10);
+  reasons.push(`In the last moment before clicking, your hand was usually under ${fmt(aimSpeed, 1)} in/s, so everything below ${fmt(start, 1)} in/s counts as micro aim and stays at the low sens.`);
 
   const slowDown = closeHead !== null && closeHits.length >= 5 && closeHead < 0.25;
-  if (slowDown) reasons.push(`Only ${fmt(closeHead * 100, 0)}% of your hits on peeks and strafes were headshots, so your slow aim drops by 10%.`);
+  const micro = slowDown ? 0.78 : 0.85;
+  reasons.push(slowDown
+    ? `Only ${fmt(closeHead * 100, 0)}% of your hits on peeks and strafes were headshots, so micro aim drops to ${fmt(micro * 100, 0)}% of your sens for steadier tracking.`
+    : `Micro aim drops to ${fmt(micro * 100, 0)}% of your sens, so small corrections and tracking get steadier.`);
+
+  // Flicks keep today's sens, unless your first flicks show a habit to correct.
+  // Where the opening flick stopped says more than where the click landed: by the click,
+  // most players have already corrected.
+  const flickOnly = firstShots.filter(s => s.band === 'flick' && s.peakSpeedInS >= 3).map(s => s.peakSpeedInS);
+  const peak = clamp(flickOnly.length >= 3 ? median(flickOnly) : flickPeak, 4, 60);
+  const reaches = flat.flatMap(r => (r.targets || []).filter(t => (t.band === 'flick' || t.band === 'turn') && t.reach != null).map(t => t.reach));
+  let flickTarget = 1;
+  if (reaches.length >= 6) {
+    const reach = median(reaches), pc = fmt(reach * 100, 0);
+    if (reach > 1.03) { flickTarget = clamp(1 / reach, 0.88, 1); reasons.push(`Your first flicks landed at ${pc}% of the way to the head, past the target, so flicks get ${fmt((1 - flickTarget) * 100, 0)}% slower than today.`); }
+    else if (reach < 0.88) { flickTarget = clamp(0.95 / reach, 1, 1.12); reasons.push(`Your first flicks landed at ${pc}% of the way to the head, short of the target, so flicks get ${fmt((flickTarget - 1) * 100, 0)}% faster than today.`); }
+    else reasons.push(`Your first flicks landed at ${pc}% of the way to the head, which is on target, so flicks keep today's sens.`);
+  } else if (over > 0.5) { flickTarget = 0.95; reasons.push(`You flick past targets (+${fmt(over, 2)}° on first shots), so flicks get 5% slower than today.`); }
+  else if (over < -0.5) { flickTarget = 1.05; reasons.push(`You stop short of targets (${fmt(over, 2)}° on first shots), so flicks get 5% faster than today.`); }
+  else reasons.push('Your flick distance is on target, so flicks keep today\'s sens.');
+  reasons.push(`Your flicks peaked around ${fmt(peak, 0)} in/s, so the ramp is solved for flicks of that speed.`);
+
+  // Big swings: how far above today the curve tops out.
+  let top = 1.25;
+  if (turnEscape >= 0.25) { top += 0.15; reasons.push(`${fmt(turnEscape * 100, 0)}% of enemies behind you got away, so big turns get more help.`); }
+  if (cm >= 60) { top += 0.15; reasons.push(`At ${fmt(cm, 0)} cm/360 big turns take a lot of arm, so the top goes up.`); }
+  if (cm < 20) { top = Math.min(top, 1.1); reasons.push(`At ${fmt(cm, 1)} cm/360 your base sens is already very fast, so the curve adds very little. Check your DPI and sens are right.`); }
+  top = clamp(Math.max(top, flickTarget + 0.1), 1.05, 1.8);
 
   const curves = runs.filter(r => r.schema === 2 && r.kind === 'curve' && r.dpi === cfg.dpi).slice(-5);
   const meanOf = (list, f) => list.reduce((a, r) => a + f(r), 0) / list.length;
@@ -2005,7 +2115,7 @@ function recommend(runs, moves, cfg) {
 
   return {
     ready: true, runs: flat.length, reasons, compare,
-    curve: { mode: 'linear', slow: cfg.sens * (slowDown ? 0.9 : 1), fast: cfg.sens * ratio, start: Math.max(start, 0.5), end },
+    curve: { ...shapeCurve(cfg.sens, micro, top, peak, cfg.sens * flickTarget, start), flickPeak: peak },
   };
 }
 /* ---------- Hand matching: find repeatable differences between directions, leave the rest raw ---------- */
@@ -2145,7 +2255,8 @@ function renderRec() {
   $('recBody').hidden = !rec.ready;
   if (!rec.ready) return;
   const c = rec.curve;
-  $('recHead').textContent = `Based on your last ${rec.runs === 1 ? 'test' : rec.runs + ' tests'}: sens ${fmt(c.slow)} when you aim slowly, rising to ${fmt(c.fast)} on fast swings.`;
+  const fl = flickSens(buildCurve(c), c.flickPeak);
+  $('recHead').textContent = `Based on your last ${rec.runs === 1 ? 'test' : rec.runs + ' tests'}: micro aim at ${fmt(c.slow)}, flicks feeling like ${fmt(fl)}, rising to ${fmt(c.fast)} on big swings. Today you play at ${fmt(st.sens)}.`;
   $('recReasons').innerHTML = rec.reasons.map(t => `<li>${t}</li>`).join('');
   const k = rec.compare;
   $('recCompare').textContent = k
@@ -2154,7 +2265,7 @@ function renderRec() {
 }
 $('recApply').addEventListener('click', () => {
   if (!lastRec || !lastRec.ready) return;
-  changeCurve(() => Object.assign(st, lastRec.curve, { preset: null }));
+  changeCurve(() => Object.assign(st, lastRec.curve, { exp: 2, preset: null }));
 });
 
 /* ---------- Saved runs (IndexedDB: raw movement is too big for localStorage) ---------- */
