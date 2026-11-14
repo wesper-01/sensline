@@ -25,7 +25,7 @@ Sensline builds that curve from how you actually aim. You play a short Valorant-
 | Turns | Enemies appear behind you | Big swings |
 | Tracking | Hold your crosshair on a moving enemy, no clicking | How much of the time you stay on target |
 
-<p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for the drills: peeks, strafes, flicks, turns and tracking."></p>
+<p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for the six drills: peeks, micro, strafes, flicks, turns and tracking."></p>
 
 When you finish, you see kills, headshots and time per kill for each drill, plus two charts. The shot map draws every click where it landed around the enemy's real hitbox, so you can see which way you miss. The flick landing chart shows where each first flick stopped: short of the head, on it, or past it.
 
