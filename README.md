@@ -14,9 +14,19 @@ Sensline builds that curve from how you actually aim. You play a short Valorant-
 
 **1. Your mouse.** Enter your DPI and Valorant sens. Already running RawAccel? Load your current `settings.json` or type in your panel values, and Sensline converts them so you start from the curve you know.
 
-**2. The aim test.** 24 enemies across peeks, strafes, flicks and turns, played at your normal sens. Sensline reads every mouse report, records how fast your hand moves, and tracks where each first flick stops before you correct it. At the end you get kills, headshots, time per kill and flick landing for each drill.
+**2. The aim test.** 27 enemies across five drills, played at your normal sens with a rifle in hand. Sensline reads every mouse report and records how fast your hand moves.
 
-<p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for peeks, strafes, flicks and turns."></p>
+| Drill | What happens | What it measures |
+| :-- | :-- | :-- |
+| Peeks | Enemies step out from cover | Small, quick corrections |
+| Strafes | Enemies run side to side in uneven bursts, like real players | Hitting a moving head |
+| Flicks | Enemies stand off to one side | Where your first flick stops, before you correct it |
+| Turns | Enemies appear behind you | Big swings |
+| Tracking | Hold your crosshair on a moving enemy, no clicking | How much of the time you stay on target |
+
+<p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for the five drills: peeks, strafes, flicks, turns and tracking."></p>
+
+When you finish, you see kills, headshots and time per kill for each drill, plus two charts. The shot map draws every click where it landed around the enemy's real hitbox, so you can see which way you miss. The flick landing chart shows where each first flick stopped: short of the head, on it, or past it.
 
 **3. Your curve.** You get a recommended curve, or you can start from Light, Balanced or Precise. Three numbers sit above the graph: your micro aim sens, the sens your flicks feel like, and your sens on big swings. Set micro aim with its own slider, and leave "Keep flicks feeling the same" on so your flicks don't drift while you tune.
 
@@ -47,7 +57,11 @@ This is the Balanced preset at 800 DPI and 0.35 sens:
 | Balanced | -15% | Same | +21% |
 | Precise | -25% | Same | +30% |
 
-After the aim test, the recommended curve uses your own flick speed instead of 12 in/s. If your first flicks land past the head, it makes flicks a little slower to match. If they land short, it makes them a little faster.
+After the aim test, the recommended curve is built from your own numbers:
+
+- **Your flick speed** replaces the 12 in/s default.
+- **Your tracking score** sets micro aim. If your crosshair stayed on the enemy under 55% of the time, micro aim goes to 75% of your sens. At 85% or more it only drops to 90%.
+- **Your flick landing** adjusts flicks. If your first flicks land past the head, flicks get a little slower. If they land short, a little faster.
 
 ## Fix it by feel
 
