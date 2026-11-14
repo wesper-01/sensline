@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-L8Gs+a5TlUMbuQGRUn76T2nIjDJuJHt4wjnaaT3tQn8='; style-src 'sha256-s5k1tmuJzlLcFSobpv1O17gkwtGYeiwnCLMMcaElI6g='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-MLJtJW0ZSq+FXHm6JyXAXKr8Svxj6wppnZQq/mDBiQs='; style-src 'sha256-sQEdY0O46OmqRzXHN8gQQ7W+jLCPQ64o+293TFhWk8Q='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="referrer" content="no-referrer">
@@ -152,7 +152,7 @@
   .faq details:first-child { border-top: 0; }
   .faq p { margin: 0 0 14px; max-width: 46em; color: var(--soft); }
 
-  .drill { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .drill { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
   .dia { display: block; width: 100%; max-width: 132px; height: auto; margin-bottom: 8px; overflow: visible; }
   .dia .foe { fill: var(--c-curve); }
   .dia .wall { fill: var(--c-bar); }
@@ -271,7 +271,7 @@
   #testStart .row { justify-content: center; margin-top: 20px; }
   #testCancel { background: transparent; color: #fff; border-color: #7d8791; }
   #testErr { color: #ffc4a8; }
-  #testDone { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(12, 15, 19, 0.86); overflow: auto; }
+  #testDone { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(12, 15, 19, 0.95); overflow: auto; }
   #testDone > div { width: min(640px, 100%); animation: rise .35s var(--ease) both; }
   #testDone h2 { font-size: 32px; margin-bottom: 16px; }
   #testDone table { color: #e8ecef; }
@@ -285,6 +285,23 @@
   .tiles dd { margin: 2px 0 0; font: 600 24px var(--head); font-variant-numeric: tabular-nums; }
   #measured .tiles div { background: var(--bg); }
   #measured .tiles dt { color: var(--soft); }
+  /* Result charts. Identity is never color alone: misses are hollow, hits are filled, and the key shows counts. */
+  .viz { display: flex; flex-wrap: wrap; gap: 8px 28px; align-items: flex-start; margin-top: 16px; }
+  .viz figure { margin: 0; max-width: 100%; }
+  .viz svg { display: block; max-width: 100%; height: auto; }
+  .viz figcaption { max-width: 330px; margin-top: 4px; font-size: 13px; color: var(--soft); }
+  .viz text { fill: var(--soft); font: 11.5px var(--body); }
+  .viz .hitbox { fill: none; stroke: var(--field-line); stroke-width: 1.5; }
+  .viz .pt-head { fill: var(--accent); stroke: var(--card); stroke-width: 1; }
+  .viz .pt-body { fill: var(--soft); stroke: var(--card); stroke-width: 1; }
+  .viz .pt-miss { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+  .viz .pt-reach { fill: var(--accent); fill-opacity: .75; stroke: var(--card); stroke-width: 1; }
+  .viz .okzone { fill: var(--accent); opacity: .1; }
+  .viz .axis { stroke: var(--soft); stroke-width: 1; }
+  .viz .rowline { stroke: var(--line); stroke-width: 1; }
+  .viz .median { stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
+  #testDone { --ink: #ffffff; --soft: #c3cad1; --accent: #7fdc5a; --line: #333b44; --field-line: #5b6570; --card: #12161a; }
+  #testDone > div { width: min(720px, 100%); }
   .feeltiles { grid-template-columns: repeat(3, 1fr); margin-bottom: 20px; }
   .feeltiles div { background: var(--bg); }
   .feeltiles dt { color: var(--soft); }
@@ -376,12 +393,13 @@
     <section class="step" id="step2">
       <p class="step-label">Step 2</p>
       <h2>Play the aim test</h2>
-      <p class="lead">Play the way you do in a match. There are 24 enemies, and your normal sens is used so we can see how your hand really moves.</p>
+      <p class="lead">Play the way you do in a match. There are 27 enemies, and your normal sens is used so we can see how your hand really moves.</p>
       <ul class="drill">
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(50 28)" class="foe"><g class="a-peek"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><rect class="wall" x="42" y="8" width="16" height="26.5" rx="1"/><g transform="translate(26 17)" class="cross"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></svg><b>Peeks</b>Enemies step out from cover</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(36 28)" class="foe"><g class="a-strafe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><g transform="translate(36 17)" class="cross"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></svg><b>Strafes</b>Enemies run side to side</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(58 28)" class="foe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g><g transform="translate(20 15)"><g class="cross a-flick"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></g></svg><b>Flicks</b>Enemies stand off to one side</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><circle class="ring" cx="36" cy="20" r="16"/><circle class="foe" cx="36" cy="33" r="3.4"/><g class="a-turn turnfx"><path class="view" d="M36 20 L28 6 L44 6 Z"/></g><circle cx="36" cy="20" r="2.4" class="cross"/></svg><b>Turns</b>Enemies appear behind you</li>
+        <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(36 28)" class="foe"><g class="a-strafe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><g transform="translate(36 15)"><g class="cross a-strafe"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></g></svg><b>Tracking</b>Hold your aim on a moving enemy</li>
       </ul>
       <p class="callout">If RawAccel is running with a curve, set its dropdown to Off and click Apply before you start. Otherwise the test adds the curve twice.</p>
       <div class="row"><button class="primary" id="runFlat">Start the aim test</button></div>
@@ -389,7 +407,8 @@
       <div id="measured" hidden>
         <h3 id="lastHead">Your last test</h3>
         <p class="readout mt0" id="measureRead"></p>
-        <div class="scroll"><table class="compact mt10"><thead><tr><th>Drill</th><th>Killed</th><th>Headshots</th><th>Time per kill</th><th>First flick landed</th></tr></thead><tbody id="lastRows"></tbody></table></div>
+        <div class="scroll"><table class="compact mt10"><thead><tr><th>Drill</th><th>Killed</th><th>Headshots</th><th>Time per kill</th><th>First flick or tracking</th></tr></thead><tbody id="lastRows"></tbody></table></div>
+        <div class="viz" id="lastViz"></div>
         <p class="note" id="lastInput"></p>
       </div>
     </section>
@@ -651,7 +670,8 @@
       <div><dt>Typical time per kill</dt><dd id="doneMs"></dd></div>
       <div><dt>First flick landed</dt><dd id="doneReach"></dd></div>
     </dl>
-    <div class="scroll"><table class="compact"><thead><tr><th>Drill</th><th>Killed</th><th>Headshots</th><th>Time</th><th>First flick</th></tr></thead><tbody id="doneRows"></tbody></table></div>
+    <div class="scroll"><table class="compact"><thead><tr><th>Drill</th><th>Killed</th><th>Headshots</th><th>Time</th><th>First flick or tracking</th></tr></thead><tbody id="doneRows"></tbody></table></div>
+    <div class="viz" id="doneViz"></div>
     <p class="note" id="doneInput"></p>
     <div class="row">
       <button class="primary" id="doneNext">See my curve</button>
@@ -1642,6 +1662,9 @@ const RUN_SPEED = 5;   // m/s, for strafes and peeks
 const HIDDEN = 0.5;    // meters behind the wall edge before a peek
 const EYE_H = 1.5;     // eye height above the floor, in meters
 const HEAD_R = 0.13, BODY_R = 0.27, BODY_H = 1.55, BODY_HITS_TO_KILL = 3;
+const TRACK_SPEED = 3.2;   // m/s for tracking enemies
+const TRACK_NEED = 1200;   // ms of crosshair-on-enemy to finish one
+const TRACK_LIMIT = 6000;
 const rad = d => d * Math.PI / 180;
 const wrap180 = d => ((d + 180) % 360 + 360) % 360 - 180;
 let T = null;
@@ -1654,9 +1677,21 @@ function mulberry(a) {
 function layout() {
   const rand = mulberry(seed);
   const between = (a, b) => a + rand() * (b - a);
-  const bands = [...Array(8).fill('peek'), ...Array(7).fill('flick'), ...Array(5).fill('strafe'), ...Array(4).fill('turn')];
+  const bands = [...Array(8).fill('peek'), ...Array(7).fill('flick'), ...Array(5).fill('strafe'), ...Array(4).fill('turn'), ...Array(3).fill('track')];
   for (let i = bands.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [bands[i], bands[j]] = [bands[j], bands[i]]; }
-  const swing = { peek: [4, 12], flick: [15, 40], strafe: [5, 25], turn: [60, 130] };
+  const swing = { peek: [4, 12], flick: [15, 40], strafe: [5, 25], turn: [60, 130], track: [8, 25] };
+  // Real strafing is not a metronome: runs of uneven length with sudden reversals, kept inside +-amp.
+  const strafeLegs = (amp, speed, total) => {
+    const legs = [];
+    let x = between(-amp, amp) * 0.5, dir = rand() < 0.5 ? -1 : 1, t0 = 0;
+    while (t0 < total) {
+      const room = (dir > 0 ? amp - x : x + amp) / speed * 1000;
+      const dur = Math.max(120, Math.min(between(280, 750), room));
+      legs.push({ t0, x0: x, v: dir * speed / 1000 });
+      x += dir * speed * dur / 1000; t0 += dur; dir = -dir;
+    }
+    return legs;
+  };
   const limit = { flick: 2200, strafe: 3000, turn: 3500 };
   let yaw = 0;
   return bands.map(band => {
@@ -1666,7 +1701,11 @@ function layout() {
     if ((band === 'flick' || band === 'turn') && rand() < 0.25) t.elev = between(2.5, 3.5); // up on a ledge
     if (band === 'strafe') {
       const amp = between(1.5, 3);
-      Object.assign(t, { amp, period: 4 * amp / RUN_SPEED * 1000, phase: rand(), limit: limit.strafe });
+      Object.assign(t, { amp, legs: strafeLegs(amp, RUN_SPEED, limit.strafe + 500), limit: limit.strafe });
+    } else if (band === 'track') {
+      // Hold the crosshair on this one. It moves slower than a full run, like a player strafing while shooting.
+      const amp = between(2, 3.5);
+      Object.assign(t, { amp, legs: strafeLegs(amp, TRACK_SPEED, TRACK_LIMIT + 500), limit: TRACK_LIMIT });
     } else if (band === 'peek') {
       const out = between(1, 2.5), hold = between(350, 800);
       Object.assign(t, { peekSide: rand() < 0.5 ? -1 : 1, out, hold, tMove: (out + HIDDEN) / RUN_SPEED * 1000 });
@@ -1710,9 +1749,10 @@ function crates() {
 }
 // How far the enemy has moved sideways from its anchor point, in meters.
 function lateral(t, ms) {
-  if (t.band === 'strafe') {
-    const p = (ms / t.period + t.phase) % 1;
-    return t.amp * (p < 0.5 ? 4 * p - 1 : 3 - 4 * p);
+  if (t.legs) {
+    // Reversals are rounded over about 90 ms, since nobody changes direction instantly.
+    const at = m => { m = Math.max(m, 0); let leg = t.legs[0]; for (const l of t.legs) { if (l.t0 > m) break; leg = l; } return leg.x0 + leg.v * (m - leg.t0); };
+    return (at(ms - 45) + 2 * at(ms) + at(ms + 45)) / 4;
   }
   if (t.band === 'peek') {
     const span = t.out + HIDDEN;
@@ -1753,7 +1793,7 @@ function openTest(kind) {
   $('testTitle').textContent = kind === 'flat' ? 'Aim test' : kind === 'hand' ? 'Hand check' : 'Try your curve';
   $('testBody').textContent = kind === 'hand'
     ? 'Flick to each enemy in one clean motion, then click the head. Don\'t slow down to be careful: your first flick is what gets measured. Use your normal grip. Press Esc to quit without saving.'
-    : 'Aim like it\'s a real match and keep your crosshair at head height. One headshot kills, three body shots kill, and enemies leave if you take too long. An arrow points to anyone off screen. Press Esc to quit without saving.';
+    : 'Aim like it\'s a real match and keep your crosshair at head height. One headshot kills, three body shots kill, and enemies leave if you take too long. Enemies with a ring over their head are for tracking: hold your crosshair on them, no clicking. An arrow points to anyone off screen. Press Esc to quit without saving.';
   $('testGo').focus();
 }
 function closeTest() {
@@ -1833,7 +1873,9 @@ function onShot(ts) {
   if (!T || !T.running) return;
   const tgt = T.targets[T.i];
   const now = ts || performance.now(), ms = now - T.spawn; // the click's own time, not when the page got to it
+  T.shotAt = now;
   if (ms < 0) return; // nobody on screen yet
+  if (tgt.band === 'track') return; // tracking enemies are held, not shot
   const c = headCam(tgt, ms, T.yaw, T.pitch);
   const error = Math.acos(clamp(c.z, -1, 1));
   const result = hitTest(tgt, ms, T.yaw, T.pitch);
@@ -1863,6 +1905,8 @@ function onShot(ts) {
   });
 
   if (result === 'miss') {
+    T.marks.push({ yaw: T.yaw, pitch: T.pitch, from: now });
+    if (T.marks.length > 14) T.marks.shift();
     T.misses++;
     T.flash = { text: 'Miss', until: now + 350 };
     return;
@@ -1894,6 +1938,7 @@ function endTarget(outcome, ms) {
   T.outcomes.push({
     target: T.i + 1, band: T.targets[T.i].band, outcome, timeMs: Math.round(ms),
     ...(fl && fl.reach != null ? { reach: +fl.reach.toFixed(3), fixes: fl.fixes } : {}),
+    ...(T.targets[T.i].band === 'track' ? { onTarget: +(T.track.seen ? T.track.on / T.track.seen : 0).toFixed(3) } : {}),
   });
   if (outcome === 'escaped') T.escaped++;
   T.i++;
@@ -1905,6 +1950,7 @@ function markSpawn() {
   Object.assign(T, {
     spawn: performance.now() + lead + T.targets[T.i].delay, fromYaw: T.yaw, fromPitch: T.pitch, peak: 0, path: 0, bodyHits: 0,
     flick: { peak: 0, slowRun: 0, done: false, reach: null, fixes: 0, moving: false },
+    track: { on: 0, seen: 0, touched: false },
   });
 }
 const COUNTDOWN = 1500; // ms of 3, 2, 1 before the first enemy, so nobody starts mid-reach for the mouse
@@ -1919,7 +1965,8 @@ function finishTest() {
     if (flicks.length >= 3) st.flickPeak = clamp(median(flicks.map(s => s.peakSpeedInS)), 4, 60);
   }
   const avg = key => T.shots.length ? T.shots.reduce((sum, s) => sum + s[key], 0) / T.shots.length : 0;
-  const reaches = T.outcomes.filter(o => o.reach != null).map(o => o.reach);
+  const reaches = T.outcomes.filter(o => o.reach != null && o.band !== 'track').map(o => o.reach);
+  const tracked = T.outcomes.filter(o => o.onTarget != null).map(o => o.onTarget);
   const gap = median(T.gaps);
   const id = Date.now();
   const run = {
@@ -1933,6 +1980,7 @@ function finishTest() {
       kills: T.outcomes.length - T.escaped, escaped: T.escaped, hits: T.hits, heads: T.heads, misses: T.misses,
       avgErrorDeg: +avg('errorDeg').toFixed(3), avgOvershootDeg: +avg('overshootDeg').toFixed(3),
       flickReach: reaches.length ? +median(reaches).toFixed(3) : null, flicksMeasured: reaches.length,
+      trackOnTarget: tracked.length ? +(tracked.reduce((a, b) => a + b, 0) / tracked.length).toFixed(3) : null,
     },
     shots: T.shots,
     targets: T.outcomes,
@@ -1946,16 +1994,18 @@ function finishTest() {
   return saveRun(run, movement).then(refreshHistory).catch(storageFailed);
 }
 // Per-drill numbers for one run: the end screen and step 2 both show these.
-const BAND_NAME = { peek: 'Peeks', strafe: 'Strafes', flick: 'Flicks', turn: 'Turns', right: 'Right', left: 'Left', up: 'Up', down: 'Down' };
+const BAND_NAME = { peek: 'Peeks', strafe: 'Strafes', flick: 'Flicks', turn: 'Turns', track: 'Tracking', right: 'Right', left: 'Left', up: 'Up', down: 'Down' };
 function bandStats(run) {
-  const order = run.kind === 'hand' ? ['right', 'left', 'up', 'down'] : ['peek', 'strafe', 'flick', 'turn'];
+  const order = run.kind === 'hand' ? ['right', 'left', 'up', 'down'] : ['peek', 'strafe', 'flick', 'turn', 'track'];
   return order.map(band => {
     const tg = (run.targets || []).filter(t => t.band === band);
     if (!tg.length) return null;
     const kills = tg.filter(t => t.outcome !== 'escaped');
     const hits = run.shots.filter(s => s.band === band && s.hit);
     const reach = tg.filter(t => t.reach != null).map(t => t.reach);
+    const held = tg.filter(t => t.onTarget != null).map(t => t.onTarget);
     return {
+      onTarget: held.length ? held.reduce((a, b) => a + b, 0) / held.length : null,
       band, name: BAND_NAME[band], total: tg.length, kills: kills.length,
       headshot: hits.length ? hits.filter(s => s.result === 'head').length / hits.length : null,
       ms: kills.length ? median(kills.map(t => t.timeMs)) : null,
@@ -1972,8 +2022,50 @@ function reachWords(r) {
   return `${pc}%, on target`;
 }
 function statsRows(run) {
-  return bandStats(run).map(b => `<tr><td>${b.name}</td><td>${b.kills} of ${b.total}</td><td>${b.headshot == null ? 'n/a' : fmt(b.headshot * 100, 0) + '%'}</td><td>${b.ms == null ? 'n/a' : fmt(b.ms, 0) + ' ms'}</td><td>${reachWords(b.reach)}</td></tr>`).join('');
+  return bandStats(run).map(b => `<tr><td>${b.name}</td><td>${b.kills} of ${b.total}</td><td>${b.headshot == null ? 'n/a' : fmt(b.headshot * 100, 0) + '%'}</td><td>${b.ms == null ? 'n/a' : fmt(b.ms, 0) + ' ms'}</td><td>${b.band === 'track' ? (b.onTarget == null ? 'n/a' : fmt(b.onTarget * 100, 0) + '% of the time on the enemy') : reachWords(b.reach)}</td></tr>`).join('');
 }
+// Shot map: where every click landed relative to the enemy, in real size (the outline is the hitbox).
+function shotPlot(run) {
+  const PX = 100, hx = 110, hy = 62, W = 220, H = 292; // 100 px per meter, head center at (hx, hy)
+  let far = 0;
+  const count = { head: 0, body: 0, miss: 0 };
+  const dots = run.shots.map(s => {
+    count[s.result]++;
+    // errors are crosshair minus head: + is right of / above the head
+    const x = hx + Math.tan(rad(s.errorYawDeg)) * s.distanceM * PX, y = hy - Math.tan(rad(s.errorPitchDeg)) * s.distanceM * PX;
+    if (x < 6 || x > W - 6 || y < 6 || y > 232) { far++; return ''; }
+    const tip = `${BAND_NAME[s.band]}: ${s.result === 'head' ? 'headshot' : s.result === 'body' ? 'body hit' : 'miss'}, ${fmt(s.errorDeg, 2)}° from the head`;
+    return `<circle class="pt-${s.result}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="3.2"><title>${tip}</title></circle>`;
+  }).join('');
+  const key = (cls, x, text) => `<circle class="pt-${cls}" cx="${x}" cy="252" r="3.2"/><text x="${x + 8}" y="256">${text}</text>`;
+  return `<figure><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Shot map: ${count.head} headshots, ${count.body} body hits and ${count.miss} misses, drawn where each landed around the enemy.">
+    <rect class="hitbox" x="${hx - BODY_R * PX}" y="${hy + 0.1 * PX}" width="${BODY_R * 2 * PX}" height="${(BODY_H - 0.1) * PX}" rx="6"/>
+    <circle class="hitbox" cx="${hx}" cy="${hy}" r="${HEAD_R * PX}"/>
+    ${dots}
+    ${key('head', 8, `Head ${count.head}`)}${key('body', 78, `Body ${count.body}`)}${key('miss', 148, `Miss ${count.miss}`)}
+    <text x="8" y="280">${far ? `${far} more ${far === 1 ? 'shot' : 'shots'} landed outside this view.` : 'Every shot is in view.'}</text>
+  </svg><figcaption>Where your shots landed. The outline is the enemy's real hitbox.</figcaption></figure>`;
+}
+// Flick landing: one dot per enemy, placed where the opening flick stopped. 100% is on the head.
+function reachPlot(run) {
+  const rows = bandStats(run).filter(b => b.band !== 'track').map(b => ({ ...b, list: (run.targets || []).filter(t => t.band === b.band && t.reach != null).map(t => t.reach) })).filter(b => b.list.length);
+  if (!rows.length) return '';
+  const W = 330, L = 62, R = 14, top = 26, rowH = 24, H = top + rows.length * rowH + 30;
+  const X = r => L + (clamp(r, 0.6, 1.4) - 0.6) / 0.8 * (W - L - R);
+  let out = `<rect class="okzone" x="${X(0.88)}" y="${top - 6}" width="${X(1.03) - X(0.88)}" height="${rows.length * rowH + 6}"/>
+    <line class="axis" x1="${X(1)}" x2="${X(1)}" y1="${top - 6}" y2="${top + rows.length * rowH}"/>
+    <text x="${X(1)}" y="12" text-anchor="middle">On the head</text>`;
+  for (const v of [0.6, 0.8, 1, 1.2, 1.4]) out += `<text x="${X(v)}" y="${H - 8}" text-anchor="middle">${v * 100}%</text>`;
+  rows.forEach((b, i) => {
+    const y = top + i * rowH + rowH / 2;
+    out += `<text x="${L - 8}" y="${y + 4}" text-anchor="end">${b.name}</text><line class="rowline" x1="${L}" x2="${W - R}" y1="${y}" y2="${y}"/>`;
+    for (const r of b.list) out += `<circle class="pt-reach" cx="${X(r).toFixed(1)}" cy="${y}" r="3.4"><title>${b.name}: first flick stopped at ${fmt(r * 100, 0)}% of the way</title></circle>`;
+    out += `<line class="median" x1="${X(b.reach)}" x2="${X(b.reach)}" y1="${y - 8}" y2="${y + 8}"><title>${b.name}: typical landing ${fmt(b.reach * 100, 0)}%</title></line>`;
+  });
+  return `<figure><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Where first flicks stopped, per drill. ${rows.map(b => `${b.name}: typically ${fmt(b.reach * 100, 0)}%`).join('. ')}.">${out}</svg>
+    <figcaption>Where each first flick stopped. Left of the line is short, right is past. The bar marks your typical landing, and the shaded band is on target.</figcaption></figure>`;
+}
+const runViz = run => shotPlot(run) + reachPlot(run);
 function showDone(run) {
   const s = run.summary;
   $('testStart').hidden = true;
@@ -1984,6 +2076,7 @@ function showDone(run) {
   $('doneMs').textContent = s.medianMs ? fmt(s.medianMs, 0) + ' ms' : 'n/a';
   $('doneReach').textContent = s.flickReach == null ? 'n/a' : fmt(s.flickReach * 100, 0) + '%';
   $('doneRows').innerHTML = statsRows(run);
+  $('doneViz').innerHTML = runViz(run);
   $('doneInput').textContent = inputWords(run);
   $('doneNext').textContent = run.kind === 'hand' ? 'See my hand check' : run.kind === 'curve' ? 'Back to my curve' : 'See my curve';
   $('doneNext').focus();
@@ -1992,7 +2085,7 @@ function inputWords(run) {
   const i = run.input || {};
   const how = run.rawInput ? 'Raw mouse input' : 'Mouse input with Windows pointer settings';
   const rate = i.reportHz ? `, reports about every ${fmt(1000 / i.reportHz, 1)} ms` : '';
-  return `${how}${rate}. First flick is where your opening move stopped: 100% means right on the head.`;
+  return `${how}${rate}. First flick is where your opening move stopped: 100% means right on the head. Tracking counts from the moment your crosshair first touches the enemy.`;
 }
 function leaveDone() {
   const run = T && T.done;
@@ -2079,8 +2172,13 @@ function recommend(runs, moves, cfg) {
   reasons.push(`In the last moment before clicking, your hand was usually under ${fmt(aimSpeed, 1)} in/s, so everything below ${fmt(start, 1)} in/s counts as micro aim and stays at the low sens.`);
 
   const slowDown = closeHead !== null && closeHits.length >= 5 && closeHead < 0.25;
-  const micro = slowDown ? 0.78 : 0.85;
-  reasons.push(slowDown
+  // The tracking drill is the direct measure: how much of the time the crosshair stayed on a moving enemy.
+  const held = targets.filter(t => t.band === 'track' && t.onTarget != null).map(t => t.onTarget);
+  const onTarget = held.length >= 2 ? held.reduce((a, b) => a + b, 0) / held.length : null;
+  const micro = onTarget !== null ? (onTarget < 0.55 ? 0.75 : onTarget < 0.72 ? 0.8 : onTarget < 0.85 ? 0.85 : 0.9) : slowDown ? 0.78 : 0.85;
+  if (onTarget !== null) {
+    reasons.push(`While tracking, your crosshair stayed on the enemy ${fmt(onTarget * 100, 0)}% of the time, so micro aim goes to ${fmt(micro * 100, 0)}% of your sens${onTarget >= 0.85 ? '. Your tracking is already steady, so it only drops a little.' : ' for steadier tracking.'}`);
+  } else reasons.push(slowDown
     ? `Only ${fmt(closeHead * 100, 0)}% of your hits on peeks and strafes were headshots, so micro aim drops to ${fmt(micro * 100, 0)}% of your sens for steadier tracking.`
     : `Micro aim drops to ${fmt(micro * 100, 0)}% of your sens, so small corrections and tracking get steadier.`);
 
@@ -2328,6 +2426,7 @@ function renderLast() {
   const reach = s.flickReach == null ? '' : ` Your first flicks landed at ${fmt(s.flickReach * 100, 0)}% of the way to the head${s.flickReach > 1.03 ? ', so you tend to flick past' : s.flickReach < 0.88 ? ', so you tend to stop short' : ''}.`;
   $('measureRead').textContent = `${s.kills} of ${s.kills + s.escaped} enemies killed, ${s.hits ? fmt(s.headshotRate * 100, 0) : 0}% of hits were headshots.${peaks.length ? ` Flicks and turns peaked around ${fmt(median(peaks), 0)} in/s.` : ''}${reach}`;
   $('lastRows').innerHTML = statsRows(run);
+  $('lastViz').innerHTML = runViz(run);
   $('lastInput').textContent = inputWords(run);
 }
 async function refreshHistory() {
@@ -2428,7 +2527,7 @@ async function beginTest() {
     }
   }
   document.documentElement.requestFullscreen && $('test').requestFullscreen().catch(() => {});
-  Object.assign(T, { running: true, done: null, event: RAW_EVENT, gaps: [], win: [], props: crates(), yaw: 0, pitch: 0, i: 0, hits: 0, heads: 0, misses: 0, escaped: 0, times: [], peaks: [], shots: [], samples: [], outcomes: [], flash: null, hitMark: null, hitAt: 0, ghost: null, sparks: [], hist: new Array(HBINS).fill(0), targets: T.kind === 'hand' ? handLayout() : layout(), last: performance.now(), t0: performance.now() });
+  Object.assign(T, { running: true, done: null, event: RAW_EVENT, gaps: [], win: [], props: crates(), yaw: 0, pitch: 0, i: 0, hits: 0, heads: 0, misses: 0, escaped: 0, times: [], peaks: [], shots: [], samples: [], outcomes: [], flash: null, hitMark: null, hitAt: 0, ghost: null, sparks: [], marks: [], shotAt: 0, frameAt: performance.now(), hist: new Array(HBINS).fill(0), targets: T.kind === 'hand' ? handLayout() : layout(), last: performance.now(), t0: performance.now() });
   markSpawn();
   $('testStart').hidden = true;
   requestAnimationFrame(frame);
@@ -2459,6 +2558,25 @@ function frame() {
   const tgt = T.targets[T.i], ms = now - T.spawn;
   // A mouse that stops sends nothing at all, so silence counts as standing still.
   if (now - T.last > 20) { trackFlick(0, now); if (T.flick) T.flick.moving = false; }
+  // Tracking enemies: time on the enemy adds up. The clock for the score starts at first touch,
+  // so the flick over to the enemy doesn't count against tracking.
+  const frameMs = Math.min(now - T.frameAt, 50);
+  T.frameAt = now;
+  if (tgt.band === 'track' && ms >= 0) {
+    const on = hitTest(tgt, ms, T.yaw, T.pitch) !== 'miss';
+    if (on) T.track.touched = true;
+    if (T.track.touched) { T.track.seen += frameMs; if (on) T.track.on += frameMs; }
+    T.track.onNow = on;
+    if (T.track.on >= TRACK_NEED) {
+      if (audio && st.sound) playPop(audio);
+      addBurst(now, 12);
+      T.flash = { text: 'Tracked', until: now + 450 };
+      T.ghost = { t: tgt, ms, from: now };
+      endTarget('tracked', ms);
+      if (T && T.running) requestAnimationFrame(frame);
+      return;
+    }
+  }
   if (ms > tgt.limit) {
     T.flash = { text: 'Got away', until: now + 500 };
     endTarget('escaped', tgt.limit);
@@ -2551,7 +2669,7 @@ function frame() {
     quad([P(near, -s * 0.14, -EYE_H), P(near, 0, -EYE_H), P(near, 0, 1.5), P(near, -s * 0.14, 1.5)], A.blockSide); // shaded corner
   };
 
-  const drawEnemy = (t, tMs, alpha, flash) => {
+  const drawEnemy = (t, tMs, alpha, flash, fall) => {
     const c = headCam(t, tMs, T.yaw, T.pitch);
     if (c.z <= 0.05) return;
     const p = proj(c);
@@ -2564,6 +2682,11 @@ function frame() {
     g.save();
     g.globalAlpha = alpha;
     g.lineCap = 'round'; g.lineJoin = 'round';
+    // A killed enemy tips over around its feet instead of just vanishing.
+    if (fall) {
+      const fx = p.x, fy = p.y + BODY_H * m;
+      g.translate(fx, fy); g.rotate(fall * fall * 1.25 * (t.yaw % 2 < 1 ? 1 : -1)); g.translate(-fx, -fy);
+    }
 
     // ground shadow
     g.fillStyle = 'rgba(30, 28, 22, 0.28)';
@@ -2628,20 +2751,81 @@ function frame() {
     g.restore();
   };
 
-  const ghost = T.ghost && now - T.ghost.from < 240 ? T.ghost : null;
+  // Bullet marks where misses hit the wall: you can see which way you tend to miss.
+  T.marks = T.marks.filter(k => now - k.from < 5000);
+  for (const k of T.marks) {
+    const c = toCamera(k, T.yaw, T.pitch);
+    if (c.z <= 0.05) continue;
+    const q = proj(c), r = Math.max(2, f * 0.09 / (34 * c.z)), age = (now - k.from) / 5000;
+    g.globalAlpha = 1 - age * age;
+    g.fillStyle = 'rgba(255, 255, 255, 0.5)'; g.beginPath(); g.arc(q.x, q.y, r * 1.9, 0, 7); g.fill();
+    g.fillStyle = '#15181c'; g.beginPath(); g.arc(q.x, q.y, r, 0, 7); g.fill();
+  }
+  g.globalAlpha = 1;
+
+  const GHOST_MS = 340;
+  const ghost = T.ghost && now - T.ghost.from < GHOST_MS ? T.ghost : null;
   if (ghost) {
+    const k = (now - ghost.from) / GHOST_MS;
     if (ghost.t.elev > 0) block(ghost.t, -1.6, 1.6, -EYE_H, ghost.t.elev - BODY_H);
-    drawEnemy(ghost.t, ghost.ms, 1 - (now - ghost.from) / 240, true);
+    drawEnemy(ghost.t, ghost.ms, 1 - k * k, k < 0.25, calm() ? 0 : k);
     cover(ghost.t);
   }
   if (tgt.elev > 0 && !(ghost && ghost.t === tgt)) block(tgt, -1.6, 1.6, -EYE_H, tgt.elev - BODY_H);
-  if (ms >= 0) drawEnemy(tgt, ms, 1, now - T.hitAt < 90);
+  if (ms >= 0) drawEnemy(tgt, ms, 1, now - T.hitAt < 90, 0);
   cover(tgt); // drawn even before a peek, so you can hold the angle
+
+  // Tracking enemy: a ring over the head fills as you stay on it, and brightens while you are on.
+  if (tgt.band === 'track' && ms >= 0) {
+    const c = headCam(tgt, ms, T.yaw, T.pitch);
+    if (c.z > 0.05) {
+      const q = proj(c), m = f / (tgt.dist * c.z), r = Math.max(9, 0.3 * m), y = q.y - Math.max(16, 0.42 * m);
+      g.lineWidth = Math.max(3, r * 0.28); g.lineCap = 'butt';
+      g.strokeStyle = 'rgba(16, 20, 25, 0.7)'; g.beginPath(); g.arc(q.x, y, r, 0, 7); g.stroke();
+      g.strokeStyle = T.track.onNow ? '#2bf0a2' : 'rgba(255, 255, 255, 0.75)';
+      g.beginPath(); g.arc(q.x, y, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * clamp(T.track.on / TRACK_NEED, 0, 1)); g.stroke();
+    }
+  }
 
   // Darker corners keep the eye in the middle, where the crosshair is.
   const vig = g.createRadialGradient(cx, cy, Math.min(W, H) * 0.35, cx, cy, Math.hypot(cx, cy));
   vig.addColorStop(0, 'rgba(0, 0, 0, 0)'); vig.addColorStop(1, 'rgba(0, 0, 0, 0.32)');
   g.fillStyle = vig; g.fillRect(0, 0, W, H);
+
+  /* ---- your weapon: kicks, flashes and leaves a tracer on each shot ---- */
+  {
+    const since = now - T.shotAt, kick = calm() ? 0 : Math.max(0, 1 - since / 110);
+    const u = Math.min(W, H) / 100; // the gun scales with the screen
+    const sway = calm() ? 0 : Math.sin(now / 900) * 0.25 * u;
+    const gx = W - 20 * u + kick * 1.4 * u, gy = H + 1 * u + kick * 2 * u + sway;
+    const muzzle = { x: gx - 19 * u, y: gy - 25.4 * u };
+    if (since < 60) {
+      // tracer from the muzzle to where the shot went (the crosshair)
+      const a = 1 - since / 60;
+      g.strokeStyle = `rgba(255, 236, 170, ${0.75 * a})`; g.lineWidth = 1.6; g.lineCap = 'round';
+      g.beginPath(); g.moveTo(muzzle.x, muzzle.y); g.lineTo(cx + (muzzle.x - cx) * 0.06, cy + (muzzle.y - cy) * 0.06); g.stroke();
+    }
+    if (since < 45 && !calm()) {
+      const s = (3.4 - since / 20) * u;
+      g.fillStyle = 'rgba(255, 214, 120, 0.9)';
+      g.beginPath();
+      for (let i = 0; i < 8; i++) { const ang = i * Math.PI / 4 + 0.3, rr = i % 2 ? s * 0.45 : s; g.lineTo(muzzle.x + Math.cos(ang) * rr, muzzle.y + Math.sin(ang) * rr); }
+      g.closePath(); g.fill();
+    }
+    const poly = (pts, fill) => { g.fillStyle = fill; g.beginPath(); pts.forEach(([x, y], i) => (i ? g.lineTo(gx + x * u, gy + y * u) : g.moveTo(gx + x * u, gy + y * u))); g.closePath(); g.fill(); };
+    // Seen from behind and to the right, pointing at the crosshair. Far parts first.
+    poly([[-19.6, -25], [-18.2, -26], [-12, -22.4], [-13.6, -20.8]], '#15181c');          // barrel
+    poly([[-19.9, -26.6], [-18.9, -27.3], [-17.9, -26.2], [-18.9, -25.5]], '#15181c');    // front sight
+    poly([[-14.6, -20.4], [-11, -23.6], [-1, -16.5], [-6.5, -11.5]], '#262b31');          // handguard, side
+    poly([[-11, -23.6], [-8.6, -25], [1.6, -18], [-1, -16.5]], '#3d444d');                // handguard, lit top
+    poly([[-6.5, -11.5], [-1, -16.5], [14, -4], [14, 1], [3, 1]], '#1f2429');             // receiver, side
+    poly([[-1, -16.5], [1.6, -18], [17, -6.4], [14, -4]], '#343a42');                     // receiver, lit top
+    poly([[2.4, -17.2], [4.2, -18.6], [7.4, -16.2], [5.6, -14.8]], '#15181c');            // rear sight
+    poly([[-8.5, -10.5], [-4.4, -13.4], [-1.5, -2], [-6.5, 1], [-10, 1]], '#14171a');     // magazine
+    poly([[-13.4, -17.6], [-9.2, -19.2], [-6.8, -13.4], [-11.8, -11]], '#2e343c');        // front hand, glove
+    poly([[-12.6, -17], [-10, -18], [-9.2, -16.2], [-11.8, -15.2]], '#454d57');           // knuckles catch the light
+    poly([[-11.8, -11], [-6.8, -13.4], [-9, 1], [-19, 1]], '#23282e');                    // sleeve, cut by the screen edge
+  }
 
   /* ---- arrow, effects, crosshair ---- */
   if (ms >= 0) {
