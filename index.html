@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-MLJtJW0ZSq+FXHm6JyXAXKr8Svxj6wppnZQq/mDBiQs='; style-src 'sha256-sQEdY0O46OmqRzXHN8gQQ7W+jLCPQ64o+293TFhWk8Q='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
+<!-- csp:start --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-87yP1I1PwpQBLM6qtgMmMncGApRKwjlr3JDVPseyh1Q=' 'sha256-NNGBOFBQ0pW1b+ZRZFLAsadWQ3BIPs4ZrJFS4pQIuKM='; style-src 'sha256-SQ2rFjg+9df/tCLrTvZaBdkmZJASpEgHtPrTqV80Oso='; img-src data:; base-uri 'none'; form-action 'none'"><!-- csp:end -->
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
 <meta name="referrer" content="no-referrer">
@@ -152,7 +152,7 @@
   .faq details:first-child { border-top: 0; }
   .faq p { margin: 0 0 14px; max-width: 46em; color: var(--soft); }
 
-  .drill { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
+  .drill { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin: 0 0 20px; padding: 0; list-style: none; }
   .dia { display: block; width: 100%; max-width: 132px; height: auto; margin-bottom: 8px; overflow: visible; }
   .dia .foe { fill: var(--c-curve); }
   .dia .wall { fill: var(--c-bar); }
@@ -169,6 +169,8 @@
   .a-turn { animation: d-turn .8s var(--ease) .6s both; }
   @keyframes d-peek { from { transform: translateX(0); } to { transform: translateX(-24px); } }
   @keyframes d-strafe { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-16px); } 75% { transform: translateX(16px); } }
+  .a-micro { animation: d-micro .3s var(--ease) .7s both; }
+  @keyframes d-micro { from { transform: translateX(0); } to { transform: translateX(11px); } }
   @keyframes d-flick { from { transform: translateX(0); } to { transform: translateX(38px); } }
   @keyframes d-turn { from { transform: rotate(0); } to { transform: rotate(180deg); } }
   .drill li { padding-top: 0; font-size: 14px; color: var(--soft); line-height: 1.35; }
@@ -300,6 +302,11 @@
   .viz .axis { stroke: var(--soft); stroke-width: 1; }
   .viz .rowline { stroke: var(--line); stroke-width: 1; }
   .viz .median { stroke: var(--ink); stroke-width: 2.5; stroke-linecap: round; }
+  .tr-line { fill: none; stroke: var(--field-line); stroke-width: 1.5; }
+  .tr-flat { fill: var(--card); stroke: var(--ink); stroke-width: 1.8; }
+  .tr-curve { fill: var(--accent); stroke: var(--card); stroke-width: 1; }
+  .trendkey svg { vertical-align: -1px; margin-left: 6px; }
+  .trendkey svg:first-child { margin-left: 0; }
   #testDone { --ink: #ffffff; --soft: #c3cad1; --accent: #7fdc5a; --line: #333b44; --field-line: #5b6570; --card: #12161a; }
   #testDone > div { width: min(720px, 100%); }
   .feeltiles { grid-template-columns: repeat(3, 1fr); margin-bottom: 20px; }
@@ -331,7 +338,7 @@
   <header class="intro">
     <div class="hero-copy">
       <h1>Find the mouse curve that fits your hand.</h1>
-      <p>A mouse curve keeps your sens steady when you aim slowly and speeds it up on fast swings, so small adjustments stay precise and big turns take less arm.</p>
+      <p>A mouse curve gives you a low sens for small corrections and tracking, the sens you already know on flicks, and more on big swings.</p>
       <p>Sensline watches how you really aim in a short Valorant-style test, then builds the settings file for RawAccel, a free mouse acceleration driver for Windows.</p>
       <div class="cta">
         <button class="primary" id="startGuide">Set up my curve</button>
@@ -339,7 +346,7 @@
       </div>
     </div>
     <figure class="hero-fig">
-      <svg id="heroSvg" viewBox="0 0 460 236" role="img" aria-label="Your current curve: sens stays at today's value at slow hand speeds and rises on fast swings."></svg>
+      <svg id="heroSvg" viewBox="0 0 460 236" role="img" aria-label="Your current curve: sens sits below today's value at slow hand speeds and rises above it on fast swings."></svg>
       <div class="hero-read" aria-live="off">
         <div>Hand speed<b id="heroSpeed"></b></div>
         <div>Sens<b id="heroSens"></b></div>
@@ -393,9 +400,10 @@
     <section class="step" id="step2">
       <p class="step-label">Step 2</p>
       <h2>Play the aim test</h2>
-      <p class="lead">Play the way you do in a match. There are 27 enemies, and your normal sens is used so we can see how your hand really moves.</p>
+      <p class="lead">Play the way you do in a match. There are 31 enemies, and your normal sens is used so we can see how your hand really moves.</p>
       <ul class="drill">
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(50 28)" class="foe"><g class="a-peek"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><rect class="wall" x="42" y="8" width="16" height="26.5" rx="1"/><g transform="translate(26 17)" class="cross"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></svg><b>Peeks</b>Enemies step out from cover</li>
+        <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(30 28)" class="foe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g><g transform="translate(41 28)" class="foe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g><g transform="translate(30 15)"><g class="cross a-micro"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></g></svg><b>Micro</b>A second enemy right beside your aim</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(36 28)" class="foe"><g class="a-strafe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g></g><g transform="translate(36 17)" class="cross"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></svg><b>Strafes</b>Enemies run side to side</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><line class="floor" x1="2" x2="70" y1="34.5" y2="34.5"/><g transform="translate(58 28)" class="foe"><circle cx="0" cy="-13" r="3.6"/><rect x="-3.6" y="-9" width="7.2" height="15" rx="2.5"/></g><g transform="translate(20 15)"><g class="cross a-flick"><circle cx="0" cy="0" r="3"/><path d="M0 -6V-3M0 3V6M-6 0H-3M3 0H6"/></g></g></svg><b>Flicks</b>Enemies stand off to one side</li>
         <li><svg class="dia" viewBox="0 0 72 40" aria-hidden="true"><circle class="ring" cx="36" cy="20" r="16"/><circle class="foe" cx="36" cy="33" r="3.4"/><g class="a-turn turnfx"><path class="view" d="M36 20 L28 6 L44 6 Z"/></g><circle cx="36" cy="20" r="2.4" class="cross"/></svg><b>Turns</b>Enemies appear behind you</li>
@@ -500,8 +508,9 @@
 
       <div class="row"><button id="runCurve">Try this curve in the test</button></div>
       <div id="results" hidden>
-        <div class="scroll"><table class="mt14"><thead><tr><th>Test</th><th>Typical time per kill</th><th>Shots that hit</th><th>Hits that were headshots</th></tr></thead><tbody id="resultRows"></tbody></table></div>
-        <p class="note">A new curve takes days to learn, so one run means little. Trust several runs and how it feels in game.</p>
+        <h3>Normal sens against your curve</h3>
+        <div class="scroll"><table class="compact mt10"><thead><tr><th>Measure</th><th>Normal sens</th><th>Your curve</th><th>Change</th></tr></thead><tbody id="resultRows"></tbody></table></div>
+        <p class="note" id="resultNote"></p>
       </div>
 
       <details>
@@ -592,7 +601,7 @@
       <div class="faq">
         <details>
           <summary>Why does Sens Multiplier stay at 1?</summary>
-          <p>Sens Multiplier scales every speed, including your slow aim. Keeping it at 1 leaves your slow aim exactly as it is in Valorant today, so Acceleration and Cap: Output do all the tuning. If you had another value before, step 1 can convert your setup and move that difference into your Valorant sens.</p>
+          <p>Sens Multiplier scales every speed, including your slow aim. Keeping it at 1 means the sens you type into Valorant is exactly your micro aim sens, and Acceleration and Cap: Output do the rest. If you had another value before, step 1 can convert your setup and move that difference into your Valorant sens.</p>
         </details>
         <details>
           <summary>Why does Device Menu DPI have to be 0?</summary>
@@ -608,7 +617,7 @@
         </details>
         <details>
           <summary>Does the curve change my slow aim?</summary>
-          <p>Not below Input Offset. Under that hand speed your sens is your Valorant sens, unchanged. Above it the boost builds at the rate set by Acceleration until it reaches Cap: Output.</p>
+          <p>Yes, on purpose. Step 4 gives you a lower Valorant sens than you play today, and below Input Offset that lower sens is all you get, so small corrections and tracking are steadier. Above it the boost builds at the rate set by Acceleration until it reaches Cap: Output, which brings flicks back to the sens you know.</p>
         </details>
       </div>
     </section>
@@ -617,6 +626,11 @@
       <h2>Your test history</h2>
       <p class="note" id="historyNote">Loading your saved tests…</p>
       <div id="history" hidden>
+        <div id="trend" hidden>
+          <h3>Your progress</h3>
+          <p class="note mt0 trendkey"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle class="tr-flat" cx="6" cy="6" r="4"/></svg> Normal sens <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle class="tr-curve" cx="6" cy="6" r="4"/></svg> With a curve. Oldest test on the left, newest on the right.</p>
+          <div class="viz" id="trendViz"></div>
+        </div>
         <div class="scroll"><table class="compact mt10">
           <thead><tr>
             <th>When</th><th>Test</th><th>Time</th><th>Hit</th><th title="Share of your hits that were headshots">Heads</th>
@@ -1355,10 +1369,8 @@ function render() {
   $('fileOnly').textContent = 'Your left and up hand fixes have no field in the app, so they only work through the downloaded file.';
   $('raVersion').value = st.raVersion;
 
-  const res = Object.entries(st.results);
-  $('results').hidden = !res.length;
-  $('resultRows').innerHTML = res.map(([k, r]) => `<tr><td>${RUN_LABEL[k]}</td><td>${fmt(r.median, 0)} ms</td><td>${fmt(r.accuracy * 100, 0)}%</td><td>${r.headshot == null ? 'n/a' : fmt(r.headshot * 100, 0) + '%'}</td></tr>`).join('');
   renderRec();
+  renderCompare();
   save();
 }
 
@@ -1677,9 +1689,11 @@ function mulberry(a) {
 function layout() {
   const rand = mulberry(seed);
   const between = (a, b) => a + rand() * (b - a);
-  const bands = [...Array(8).fill('peek'), ...Array(7).fill('flick'), ...Array(5).fill('strafe'), ...Array(4).fill('turn'), ...Array(3).fill('track')];
+  const bands = [...Array(8).fill('peek'), ...Array(7).fill('flick'), ...Array(5).fill('strafe'), ...Array(4).fill('turn'), ...Array(3).fill('track'), ...Array(4).fill('micro')];
   for (let i = bands.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [bands[i], bands[j]] = [bands[j], bands[i]]; }
-  const swing = { peek: [4, 12], flick: [15, 40], strafe: [5, 25], turn: [60, 130], track: [8, 25] };
+  // A micro enemy appears beside the one before it, so it never opens the test.
+  if (bands[0] === 'micro') { const j = bands.findIndex(b => b !== 'micro'); [bands[0], bands[j]] = [bands[j], bands[0]]; }
+  const swing = { micro: [0, 0], peek: [4, 12], flick: [15, 40], strafe: [5, 25], turn: [60, 130], track: [8, 25] };
   // Real strafing is not a metronome: runs of uneven length with sudden reversals, kept inside +-amp.
   const strafeLegs = (amp, speed, total) => {
     const legs = [];
@@ -1710,6 +1724,9 @@ function layout() {
       const out = between(1, 2.5), hold = between(350, 800);
       Object.assign(t, { peekSide: rand() < 0.5 ? -1 : 1, out, hold, tMove: (out + HIDDEN) / RUN_SPEED * 1000 });
       t.limit = t.tMove * 2 + t.hold;
+    } else if (band === 'micro') {
+      // 1.5 to 4 degrees off the crosshair: a correction of a few millimeters. Placed when it spawns.
+      Object.assign(t, { off: side * between(1.5, 4), limit: 1800 });
     } else {
       t.limit = limit[band];
     }
@@ -1793,7 +1810,7 @@ function openTest(kind) {
   $('testTitle').textContent = kind === 'flat' ? 'Aim test' : kind === 'hand' ? 'Hand check' : 'Try your curve';
   $('testBody').textContent = kind === 'hand'
     ? 'Flick to each enemy in one clean motion, then click the head. Don\'t slow down to be careful: your first flick is what gets measured. Use your normal grip. Press Esc to quit without saving.'
-    : 'Aim like it\'s a real match and keep your crosshair at head height. One headshot kills, three body shots kill, and enemies leave if you take too long. Enemies with a ring over their head are for tracking: hold your crosshair on them, no clicking. An arrow points to anyone off screen. Press Esc to quit without saving.';
+    : 'Aim like it\'s a real match and keep your crosshair at head height. One headshot kills, three body shots kill, and enemies leave if you take too long. Enemies with a ring over their head are for tracking: hold your crosshair on them, no clicking. Sometimes a second enemy steps in right beside the one you just shot. An arrow points to anyone off screen. Press Esc to quit without saving.';
   $('testGo').focus();
 }
 function closeTest() {
@@ -1875,7 +1892,7 @@ function onShot(ts) {
   const now = ts || performance.now(), ms = now - T.spawn; // the click's own time, not when the page got to it
   T.shotAt = now;
   if (ms < 0) return; // nobody on screen yet
-  if (tgt.band === 'track') return; // tracking enemies are held, not shot
+  if (tgt.band === 'track') { T.flash = { text: 'Hold your aim, no clicking', until: now + 700 }; return; } // held, not shot
   const c = headCam(tgt, ms, T.yaw, T.pitch);
   const error = Math.acos(clamp(c.z, -1, 1));
   const result = hitTest(tgt, ms, T.yaw, T.pitch);
@@ -1947,6 +1964,12 @@ function endTarget(outcome, ms) {
 }
 function markSpawn() {
   const lead = T.i === 0 ? COUNTDOWN : 0;
+  const next = T.targets[T.i], prev = T.targets[T.i - 1];
+  if (next.band === 'micro') {
+    // Stands beside the enemy you just dealt with, a few degrees from wherever you are aiming now.
+    if (prev) { next.dist = prev.dist; next.elev = prev.elev; }
+    next.yaw = T.yaw + next.off;
+  }
   Object.assign(T, {
     spawn: performance.now() + lead + T.targets[T.i].delay, fromYaw: T.yaw, fromPitch: T.pitch, peak: 0, path: 0, bodyHits: 0,
     flick: { peak: 0, slowRun: 0, done: false, reach: null, fixes: 0, moving: false },
@@ -1967,6 +1990,7 @@ function finishTest() {
   const avg = key => T.shots.length ? T.shots.reduce((sum, s) => sum + s[key], 0) / T.shots.length : 0;
   const reaches = T.outcomes.filter(o => o.reach != null && o.band !== 'track').map(o => o.reach);
   const tracked = T.outcomes.filter(o => o.onTarget != null).map(o => o.onTarget);
+  const microFirst = openingShots({ shots: T.shots }, 'micro');
   const gap = median(T.gaps);
   const id = Date.now();
   const run = {
@@ -1981,6 +2005,7 @@ function finishTest() {
       avgErrorDeg: +avg('errorDeg').toFixed(3), avgOvershootDeg: +avg('overshootDeg').toFixed(3),
       flickReach: reaches.length ? +median(reaches).toFixed(3) : null, flicksMeasured: reaches.length,
       trackOnTarget: tracked.length ? +(tracked.reduce((a, b) => a + b, 0) / tracked.length).toFixed(3) : null,
+      microFirstHit: microFirst.length ? +(microFirst.filter(s => s.hit).length / microFirst.length).toFixed(3) : null,
     },
     shots: T.shots,
     targets: T.outcomes,
@@ -1994,10 +2019,16 @@ function finishTest() {
   return saveRun(run, movement).then(refreshHistory).catch(storageFailed);
 }
 // Per-drill numbers for one run: the end screen and step 2 both show these.
-const BAND_NAME = { peek: 'Peeks', strafe: 'Strafes', flick: 'Flicks', turn: 'Turns', track: 'Tracking', right: 'Right', left: 'Left', up: 'Up', down: 'Down' };
+// First click at each enemy of one drill: for micro enemies, that click is the whole correction.
+function openingShots(run, band) {
+  const seen = new Set();
+  return run.shots.filter(s => s.band === band && !seen.has(s.target) && seen.add(s.target));
+}
+const BAND_NAME = { micro: 'Micro', peek: 'Peeks', strafe: 'Strafes', flick: 'Flicks', turn: 'Turns', track: 'Tracking', right: 'Right', left: 'Left', up: 'Up', down: 'Down' };
 function bandStats(run) {
-  const order = run.kind === 'hand' ? ['right', 'left', 'up', 'down'] : ['peek', 'strafe', 'flick', 'turn', 'track'];
+  const order = run.kind === 'hand' ? ['right', 'left', 'up', 'down'] : ['micro', 'peek', 'strafe', 'flick', 'turn', 'track'];
   return order.map(band => {
+    const firsts = openingShots(run, band);
     const tg = (run.targets || []).filter(t => t.band === band);
     if (!tg.length) return null;
     const kills = tg.filter(t => t.outcome !== 'escaped');
@@ -2007,6 +2038,7 @@ function bandStats(run) {
     return {
       onTarget: held.length ? held.reduce((a, b) => a + b, 0) / held.length : null,
       band, name: BAND_NAME[band], total: tg.length, kills: kills.length,
+      firstHits: firsts.filter(s => s.hit).length, firsts: firsts.length,
       headshot: hits.length ? hits.filter(s => s.result === 'head').length / hits.length : null,
       ms: kills.length ? median(kills.map(t => t.timeMs)) : null,
       reach: reach.length ? median(reach) : null,
@@ -2022,7 +2054,7 @@ function reachWords(r) {
   return `${pc}%, on target`;
 }
 function statsRows(run) {
-  return bandStats(run).map(b => `<tr><td>${b.name}</td><td>${b.kills} of ${b.total}</td><td>${b.headshot == null ? 'n/a' : fmt(b.headshot * 100, 0) + '%'}</td><td>${b.ms == null ? 'n/a' : fmt(b.ms, 0) + ' ms'}</td><td>${b.band === 'track' ? (b.onTarget == null ? 'n/a' : fmt(b.onTarget * 100, 0) + '% of the time on the enemy') : reachWords(b.reach)}</td></tr>`).join('');
+  return bandStats(run).map(b => `<tr><td>${b.name}</td><td>${b.kills} of ${b.total}</td><td>${b.headshot == null ? 'n/a' : fmt(b.headshot * 100, 0) + '%'}</td><td>${b.ms == null ? 'n/a' : fmt(b.ms, 0) + ' ms'}</td><td>${b.band === 'track' ? (b.onTarget == null ? 'n/a' : fmt(b.onTarget * 100, 0) + '% of the time on the enemy') : b.band === 'micro' ? (b.firsts ? `${b.firstHits} of ${b.firsts} first shots hit` : 'n/a') : reachWords(b.reach)}</td></tr>`).join('');
 }
 // Shot map: where every click landed relative to the enemy, in real size (the outline is the hitbox).
 function shotPlot(run) {
@@ -2175,12 +2207,22 @@ function recommend(runs, moves, cfg) {
   // The tracking drill is the direct measure: how much of the time the crosshair stayed on a moving enemy.
   const held = targets.filter(t => t.band === 'track' && t.onTarget != null).map(t => t.onTarget);
   const onTarget = held.length >= 2 ? held.reduce((a, b) => a + b, 0) / held.length : null;
-  const micro = onTarget !== null ? (onTarget < 0.55 ? 0.75 : onTarget < 0.72 ? 0.8 : onTarget < 0.85 ? 0.85 : 0.9) : slowDown ? 0.78 : 0.85;
+  let micro = onTarget !== null ? (onTarget < 0.55 ? 0.75 : onTarget < 0.72 ? 0.8 : onTarget < 0.85 ? 0.85 : 0.9) : slowDown ? 0.78 : 0.85;
   if (onTarget !== null) {
     reasons.push(`While tracking, your crosshair stayed on the enemy ${fmt(onTarget * 100, 0)}% of the time, so micro aim goes to ${fmt(micro * 100, 0)}% of your sens${onTarget >= 0.85 ? '. Your tracking is already steady, so it only drops a little.' : ' for steadier tracking.'}`);
   } else reasons.push(slowDown
     ? `Only ${fmt(closeHead * 100, 0)}% of your hits on peeks and strafes were headshots, so micro aim drops to ${fmt(micro * 100, 0)}% of your sens for steadier tracking.`
     : `Micro aim drops to ${fmt(micro * 100, 0)}% of your sens, so small corrections and tracking get steadier.`);
+  // The micro drill checks small corrections directly: one click at an enemy a few degrees away.
+  const smalls = flat.flatMap(r => openingShots(r, 'micro')).filter(s => s.targetDistDeg <= 6);
+  if (smalls.length >= 3) {
+    const hit = smalls.filter(s => s.hit).length / smalls.length, past = median(smalls.map(s => s.overshootDeg));
+    const said = `${fmt(hit * 100, 0)}% of your first shots at enemies right beside your aim hit`;
+    if (hit >= 0.5) reasons.push(`${said}, so your small corrections don't need a lower micro aim than that.`);
+    else if (past < -0.1) reasons.push(`${said}, and the misses stopped short of the enemy. A lower sens would make that worse, so micro aim stays at ${fmt(micro * 100, 0)}%.`);
+    else if (micro > 0.75) { micro = +(micro - 0.05).toFixed(2); reasons.push(`Only ${said}, and the misses went past the enemy, so micro aim drops a little more, to ${fmt(micro * 100, 0)}% of your sens.`); }
+    else reasons.push(`Only ${said}. Micro aim is already at its lowest, ${fmt(micro * 100, 0)}% of your sens.`);
+  }
 
   // Flicks keep today's sens, unless your first flicks show a habit to correct.
   // Where the opening flick stopped says more than where the click landed: by the click,
@@ -2416,6 +2458,62 @@ function storageFailed() {
   $('historyNote').hidden = false;
   $('historyNote').textContent = 'This browser blocked saving, so runs are not being stored. Private windows often do this.';
 }
+// Your latest test at normal sens beside your latest test with the curve, measure by measure.
+function renderCompare() {
+  const last = kind => saved.runs.filter(r => r.kind === kind && r.dpi === st.dpi && Array.isArray(r.targets)).pop();
+  const flat = last('flat'), curve = last('curve');
+  $('results').hidden = !curve;
+  if (!curve) return;
+  const share = v => v == null ? null : v * 100;
+  // dir: 1 means higher is better, -1 lower is better, 0 closer to 100 is better.
+  const rows = [
+    { name: 'Enemies killed', get: r => r.summary.kills, show: v => fmt(v, 0), unit: '', dir: 1 },
+    { name: 'Hits that were headshots', get: r => r.summary.hits ? share(r.summary.headshotRate) : null, show: v => fmt(v, 0) + '%', unit: ' points', dir: 1 },
+    { name: 'Typical time per kill', get: r => r.summary.medianMs || null, show: v => fmt(v, 0) + ' ms', unit: ' ms', dir: -1 },
+    { name: 'Micro: first shots that hit', get: r => share(r.summary.microFirstHit), show: v => fmt(v, 0) + '%', unit: ' points', dir: 1 },
+    { name: 'Tracking: time on the enemy', get: r => share(r.summary.trackOnTarget), show: v => fmt(v, 0) + '%', unit: ' points', dir: 1 },
+    { name: 'Where first flicks stopped', get: r => share(r.summary.flickReach), show: v => fmt(v, 0) + '% of the way', unit: '', dir: 0 },
+  ];
+  $('resultRows').innerHTML = rows.map(m => {
+    const a = flat ? m.get(flat) : null, b = m.get(curve);
+    let change = 'n/a';
+    if (a != null && b != null) {
+      const d = Math.round(b) - Math.round(a);
+      if (m.dir === 0) { const gain = Math.abs(a - 100) - Math.abs(b - 100); change = Math.abs(gain) < 1 ? 'About the same' : gain > 0 ? 'Closer to the head' : 'Further from the head'; }
+      else change = d === 0 ? 'Same' : `${d > 0 ? '+' : ''}${d}${m.unit}, ${d * m.dir > 0 ? 'better' : 'worse'}`;
+    }
+    return `<tr><td>${m.name}</td><td>${a == null ? 'n/a' : m.show(a)}</td><td>${b == null ? 'n/a' : m.show(b)}</td><td>${change}</td></tr>`;
+  }).join('');
+  $('resultNote').textContent = `${flat ? (flat.seed === curve.seed ? 'Both tests used the same enemy layout. ' : '') : 'Play the aim test at normal sens too, and this fills in. '}A new curve takes days to learn, so one test means little. Trust several tests and how it feels in game.`;
+}
+// Progress across your last tests. Hollow dots are normal sens, filled dots are tests with a curve.
+function trendPlot(runs) {
+  const list = runs.filter(r => r.kind !== 'hand').slice(-12);
+  if (list.length < 2) return '';
+  const panels = [
+    { name: 'Hits that were headshots', get: r => r.summary.hits && r.summary.headshotRate != null ? r.summary.headshotRate * 100 : null, unit: '%' },
+    { name: 'Typical time per kill', get: r => r.summary.medianMs || null, unit: ' ms' },
+    { name: 'Tracking: time on the enemy', get: r => r.summary.trackOnTarget == null ? null : r.summary.trackOnTarget * 100, unit: '%' },
+  ];
+  const W = 250, H = 124, L = 44, R = 12, top = 12, bot = 14;
+  return panels.map(p => {
+    const pts = list.map((r, i) => ({ r, i, v: p.get(r) })).filter(q => q.v != null);
+    if (pts.length < 2) return '';
+    let lo = Math.min(...pts.map(q => q.v)), hi = Math.max(...pts.map(q => q.v));
+    if (hi - lo < 1) { lo -= 1; hi += 1; }
+    if (p.unit === '%') { lo = Math.max(0, lo); hi = Math.min(100, hi); }
+    const X = i => L + i / (list.length - 1) * (W - L - R), Y = v => top + (hi - v) / (hi - lo) * (H - top - bot);
+    let out = `<line class="rowline" x1="${L}" x2="${W - R}" y1="${Y(hi)}" y2="${Y(hi)}"/><line class="rowline" x1="${L}" x2="${W - R}" y1="${Y(lo)}" y2="${Y(lo)}"/>
+      <text x="${L - 6}" y="${Y(hi) + 4}" text-anchor="end">${fmt(hi, 0)}${p.unit === '%' ? '%' : ''}</text><text x="${L - 6}" y="${Y(lo) + 4}" text-anchor="end">${fmt(lo, 0)}${p.unit === '%' ? '%' : ''}</text>`;
+    out += `<polyline class="tr-line" points="${pts.map(q => `${X(q.i).toFixed(1)},${Y(q.v).toFixed(1)}`).join(' ')}"/>`;
+    for (const q of pts) {
+      const when = new Date(q.r.date).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      out += `<circle class="tr-${q.r.kind}" cx="${X(q.i).toFixed(1)}" cy="${Y(q.v).toFixed(1)}" r="4"><title>${when}, ${RUN_LABEL[q.r.kind].toLowerCase()}: ${fmt(q.v, 0)}${p.unit}</title></circle>`;
+    }
+    const first = pts[0].v, lastV = pts[pts.length - 1].v;
+    return `<figure><svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${p.name} over your last ${pts.length} tests: from ${fmt(first, 0)}${p.unit} to ${fmt(lastV, 0)}${p.unit}.">${out}</svg><figcaption>${p.name}${p.unit === ' ms' ? ', in ms. Lower is faster.' : '.'}</figcaption></figure>`;
+  }).join('');
+}
 function renderLast() {
   const run = saved.runs.filter(r => r.kind !== 'hand' && Array.isArray(r.targets)).pop();
   $('measured').hidden = !run;
@@ -2434,7 +2532,11 @@ async function refreshHistory() {
   const runs = allRuns.filter(validRun), moves = allMoves.filter(validMove);
   saved = { runs, moves };
   renderRec();
+  renderCompare();
   renderLast();
+  const trend = trendPlot(runs);
+  $('trend').hidden = !trend;
+  $('trendViz').innerHTML = trend;
   $('history').hidden = !runs.length;
   $('historyNote').hidden = !!runs.length;
   if (!runs.length) $('historyNote').textContent = 'No saved tests yet. Finish a test and it shows up here.';
@@ -2875,6 +2977,7 @@ function frame() {
     g.textAlign = 'left';
   };
   if (T.flash && now < T.flash.until) label(T.flash.text, cx, cy + 58, 21, 'center');
+  else if (tgt.band === 'track' && ms >= 0 && !T.track.touched) label('Track: hold your aim on the enemy', cx, cy + 58, 17, 'center');
   const countLeft = T.t0 + COUNTDOWN - now;
   if (countLeft > 0) label(String(Math.ceil(countLeft / (COUNTDOWN / 3))), cx, cy - 70, 64, 'center');
 
