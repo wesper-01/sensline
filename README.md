@@ -14,17 +14,18 @@ Sensline builds that curve from how you actually aim. You play a short Valorant-
 
 **1. Your mouse.** Enter your DPI and Valorant sens. Already running RawAccel? Load your current `settings.json` or type in your panel values, and Sensline converts them so you start from the curve you know.
 
-**2. The aim test.** 27 enemies across five drills, played at your normal sens with a rifle in hand. Sensline reads every mouse report and records how fast your hand moves.
+**2. The aim test.** 31 enemies across six drills, played at your normal sens with a rifle in hand. Sensline reads every mouse report and records how fast your hand moves.
 
 | Drill | What happens | What it measures |
 | :-- | :-- | :-- |
 | Peeks | Enemies step out from cover | Small, quick corrections |
+| Micro | A second enemy appears right beside your aim | Whether a tiny correction lands on the first shot |
 | Strafes | Enemies run side to side in uneven bursts, like real players | Hitting a moving head |
 | Flicks | Enemies stand off to one side | Where your first flick stops, before you correct it |
 | Turns | Enemies appear behind you | Big swings |
 | Tracking | Hold your crosshair on a moving enemy, no clicking | How much of the time you stay on target |
 
-<p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for the five drills: peeks, strafes, flicks, turns and tracking."></p>
+<p align="center"><img src="assets/shot-aim.png" width="760" alt="Step 2, the aim test, with diagrams for the drills: peeks, strafes, flicks, turns and tracking."></p>
 
 When you finish, you see kills, headshots and time per kill for each drill, plus two charts. The shot map draws every click where it landed around the enemy's real hitbox, so you can see which way you miss. The flick landing chart shows where each first flick stopped: short of the head, on it, or past it.
 
